@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Activity Index (WAI)</title>
+<meta name="description" content="The Weekly Activity Index (WAI) — a high-frequency indicator of Swiss GDP growth, estimated with a mixed-frequency Bayesian dynamic factor model. Kronenberg (2026).">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://philippkronenberg.github.io/wai-webapp/">
+<meta property="og:title" content="Weekly Activity Index (WAI)">
+<meta property="og:description" content="A high-frequency indicator of Swiss GDP growth, updated automatically from the mfbdfm R package.">
+<meta property="og:site_name" content="Weekly Activity Index">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Weekly Activity Index (WAI)">
+<meta name="twitter:description" content="A high-frequency indicator of Swiss GDP growth, updated automatically from the mfbdfm R package.">
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%232a78d6'/><polyline points='8,44 18,38 26,46 34,20 42,30 50,14 56,22' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linejoin='round' stroke-linecap='round'/></svg>">
+
+<!-- Chart.js 4.4.0 + its date adapter, vendored rather than loaded from a CDN:
+     the page then has no third-party runtime dependency, works behind
+     restrictive corporate proxies and offline, and cannot be broken by a CDN
+     outage or a silently re-published version. Both are MIT; see vendor/. -->
+<script src="vendor/chart.umd.js"></script>
+<script src="vendor/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<style>
+:root {
+  color-scheme: light;
+  --surface-0:      #f6f6f4;
+  --surface-1:      #fcfcfb;
+  --border:         #e2e1dc;
+  --grid:           #ebeae6;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #78776f;
+  --series-wai:     #2a78d6;
+  --series-wai-band:rgba(42, 120, 214, 0.16);
+  --series-gdp:     #eb6834;
+  --accent-soft:    #eaf1fc;
+  --warn-bg:        #fdf3e3;
+  --warn-border:    #e8c98d;
+  --warn-text:      #6b4a08;
+  --err-bg:         #fdecea;
+  --err-border:     #f0bab6;
+  --err-text:       #8f2820;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-0:      #121211;
+    --surface-1:      #1a1a19;
+    --border:         #333330;
+    --grid:           #2a2a28;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #93928a;
+    --series-wai:     #3987e5;
+    --series-wai-band:rgba(57, 135, 229, 0.22);
+    --series-gdp:     #d95926;
+    --accent-soft:    #17263a;
+    --warn-bg:        #33290f;
+    --warn-border:    #6d5720;
+    --warn-text:      #f0d9a4;
+    --err-bg:         #3a1c19;
+    --err-border:     #7a3830;
+    --err-text:       #f3b6ae;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0:      #121211;
+  --surface-1:      #1a1a19;
+  --border:         #333330;
+  --grid:           #2a2a28;
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted:     #93928a;
+  --series-wai:     #3987e5;
+  --series-wai-band:rgba(57, 135, 229, 0.22);
+  --series-gdp:     #d95926;
+  --accent-soft:    #17263a;
+  --warn-bg:        #33290f;
+  --warn-border:    #6d5720;
+  --warn-text:      #f0d9a4;
+  --err-bg:         #3a1c19;
+  --err-border:     #7a3830;
+  --err-text:       #f3b6ae;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+
+header { margin-bottom: 24px; }
+.titlebar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+h1 { font-size: 1.75rem; font-weight: 650; letter-spacing: -0.02em; }
+.subtitle { color: var(--text-secondary); font-size: 0.97rem; margin-top: 4px; max-width: 62ch; }
+.asof { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; }
+
+.icon-btn {
+  flex: none; background: var(--surface-1); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px;
+  font-size: 0.85rem; cursor: pointer;
+}
+.icon-btn:hover { color: var(--text-primary); }
+
+.banner {
+  border-radius: 8px; padding: 12px 14px; margin: 16px 0; font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+.banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+.banner-err  { background: var(--err-bg);  border-color: var(--err-border);  color: var(--err-text); }
+.banner[hidden] { display: none; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.stat-label { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.stat-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+.controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+}
+.ctl-group { display: flex; align-items: center; gap: 8px; }
+.ctl-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button {
+  background: var(--surface-1); border: 0; border-right: 1px solid var(--border);
+  padding: 6px 12px; font-size: 0.87rem; color: var(--text-secondary); cursor: pointer; font-family: inherit;
+}
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text-primary); font-weight: 600; }
+.seg button:focus-visible { outline: 2px solid var(--series-wai); outline-offset: -2px; }
+label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--text-secondary); cursor: pointer; }
+label.check input { accent-color: var(--series-wai); width: 15px; height: 15px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 2px 8px; font-size: 0.88rem; color: var(--text-secondary); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.swatch { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+.swatch.dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface-1); }
+.swatch.band { height: 12px; width: 14px; border-radius: 3px; }
+
+.chart-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px 8px; }
+.chart-box { position: relative; height: 420px; }
+@media (max-width: 640px) { .chart-box { height: 320px; } h1 { font-size: 1.4rem; } }
+
+.tablewrap { margin-top: 14px; overflow-x: auto; }
+.tablewrap[hidden] { display: none; }
+table { border-collapse: collapse; width: 100%; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--text-muted); font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.btn {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 14px; font-size: 0.88rem; color: var(--text-secondary);
+  cursor: pointer; font-family: inherit; text-decoration: none;
+}
+.btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+section.notes { margin-top: 36px; font-size: 0.92rem; color: var(--text-secondary); }
+section.notes h2 { font-size: 1.05rem; color: var(--text-primary); margin-bottom: 8px; font-weight: 620; }
+section.notes p { margin-bottom: 12px; max-width: 72ch; }
+section.notes a { color: var(--series-wai); }
+footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.83rem; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="titlebar">
+    <div>
+      <h1>Weekly Activity Index</h1>
+      <p class="subtitle">A high-frequency indicator of Swiss GDP growth, estimated with a mixed-frequency Bayesian dynamic factor model. The factor is anchored to GDP, so it reads directly as a GDP growth rate.</p>
+      <p class="asof" id="asof">Loading…</p>
+    </div>
+    <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch colour theme">Theme</button>
+  </div>
+</header>
+
+<div class="banner banner-warn" id="sample-banner" hidden></div>
+<div class="banner banner-err" id="error-banner" hidden></div>
+
+<div class="stats" id="stats"></div>
+
+<div class="controls">
+  <div class="ctl-group">
+    <span class="ctl-label" id="lbl-view">View</span>
+    <div class="seg" role="group" aria-labelledby="lbl-view" id="view-seg">
+      <button type="button" data-view="qoq" aria-pressed="true">QoQ growth</button>
+      <button type="button" data-view="yoy" aria-pressed="false">YoY growth</button>
+      <button type="button" data-view="index" aria-pressed="false">Level index</button>
+    </div>
+  </div>
+  <div class="ctl-group">
+    <span class="ctl-label" id="lbl-range">Range</span>
+    <div class="seg" role="group" aria-labelledby="lbl-range" id="range-seg">
+      <button type="button" data-years="2" aria-pressed="false">2y</button>
+      <button type="button" data-years="5" aria-pressed="true">5y</button>
+      <button type="button" data-since="2015" aria-pressed="false">2015</button>
+      <button type="button" data-since="2020" aria-pressed="false">2020</button>
+      <button type="button" data-years="0" aria-pressed="false">Full</button>
+    </div>
+  </div>
+  <label class="check"><input type="checkbox" id="show-band" checked> 95% band</label>
+  <label class="check"><input type="checkbox" id="show-gdp" checked> Published GDP</label>
+  <label class="check"><input type="checkbox" id="show-table"> Data table</label>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="chart-card">
+  <div class="chart-box"><canvas id="chart"></canvas></div>
+</div>
+
+<div class="tablewrap" id="tablewrap" hidden>
+  <table id="table"><thead></thead><tbody></tbody></table>
+  <p class="stat-note" id="table-note"></p>
+</div>
+
+<div class="actions">
+  <button class="btn" id="dl-view" type="button">Download current view (CSV)</button>
+  <button class="btn" id="dl-full" type="button">Download full data (CSV)</button>
+</div>
+
+<section class="notes">
+  <h2>About the index</h2>
+  <p>The WAI extracts a single dynamic factor from weekly, monthly and quarterly Swiss indicators. Missing and mixed-frequency observations are handled by data augmentation, the state equation carries stochastic volatility so crisis periods are not smoothed away, and the factor's loading on GDP is fixed at one — which is what makes the index interpretable as a GDP growth rate rather than an abstract index.</p>
+  <p>Shaded areas are 95% credible bands from the posterior. They are shown for the growth-rate views only: the level index is a cumulation of the growth rate, and the model does not supply a compounded credible interval for it, so no band is drawn rather than one that would look like a level band without being one.</p>
+  <p>Methodology and full empirical results: Kronenberg (2026), <em>Swiss Journal of Economics and Statistics</em>, 162:10, <a href="https://doi.org/10.1186/s41937-026-00157-w">doi:10.1186/s41937-026-00157-w</a>, extending Eckert, Kronenberg, Mikosch &amp; Neuwirth (2025), <em>Journal of Applied Econometrics</em>, 40(3), 270–290, <a href="https://doi.org/10.1002/jae.3104">doi:10.1002/jae.3104</a>.</p>
+  <p>The index is produced by the open-source <a href="https://github.com/PhilippKronenberg/mfbdfm">mfbdfm</a> R package (<a href="https://philippkronenberg.github.io/mfbdfm/">documentation</a>). This page reads a single CSV that the package writes; it performs no estimation of its own.</p>
+</section>
+
+<footer>
+  <span id="foot-meta"></span> · <a class="btn" style="padding:2px 8px" href="https://github.com/PhilippKronenberg/wai-webapp">Source</a>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var VIEWS = {
+    qoq:   { label: "WAI, quarter-on-quarter growth, annualised",
+             unit: "%", mean: "wai_qoq", lo: "wai_qoq_lo", hi: "wai_qoq_hi", gdp: "gdp_qoq" },
+    yoy:   { label: "WAI, year-over-year growth",
+             unit: "%", mean: "wai_yoy", lo: null, hi: null, gdp: null },
+    index: { label: "WAI level index (2019Q4 = 100)",
+             unit: "", mean: "wai_index", lo: null, hi: null, gdp: null }
+  };
+
+  var state = { view: "qoq", years: 5, since: null, band: true, gdp: true };
+  var rows = [], meta = null, chart = null;
+
+  function css(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function fmt(v, d) {
+    return (v === null || v === undefined || isNaN(v)) ? "–" : v.toFixed(d === undefined ? 2 : d);
+  }
+  function showError(msg) {
+    var el = document.getElementById("error-banner");
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  // --- CSV parsing -------------------------------------------------------
+  // The contract (see the mfbdfm exporter) is deliberately narrow: no quoting,
+  // no embedded commas, ISO dates, empty string for missing. So a split is
+  // enough, and anything that violates it should be loud rather than silent.
+  function parseCSV(text) {
+    var lines = text.trim().split(/\r?\n/);
+    var head = lines[0].split(",");
+    var out = [];
+    for (var i = 1; i < lines.length; i++) {
+      if (!lines[i]) continue;
+      var parts = lines[i].split(",");
+      if (parts.length !== head.length) {
+        throw new Error("row " + (i + 1) + " has " + parts.length +
+                        " fields, header has " + head.length);
+      }
+      var row = {};
+      for (var j = 0; j < head.length; j++) {
+        var raw = parts[j];
+        if (head[j] === "date") { row.date = raw; row.t = new Date(raw + "T00:00:00Z").getTime(); }
+        else { row[head[j]] = raw === "" ? null : Number(raw); }
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  function visibleRows() {
+    if (state.since) {
+      var from = Date.UTC(state.since, 0, 1);
+      return rows.filter(function (r) { return r.t >= from; });
+    }
+    if (!state.years) return rows;
+    var last = rows[rows.length - 1].t;
+    var cut = new Date(last);
+    cut.setUTCFullYear(cut.getUTCFullYear() - state.years);
+    return rows.filter(function (r) { return r.t >= cut.getTime(); });
+  }
+
+  // --- crosshair ---------------------------------------------------------
+  var crosshair = {
+    id: "crosshair",
+    afterDatasetsDraw: function (c) {
+      var active = c.tooltip && c.tooltip.getActiveElements ? c.tooltip.getActiveElements() : [];
+      if (!active.length) return;
+      var x = active[0].element.x, ctx = c.ctx, area = c.chartArea;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, area.top);
+      ctx.lineTo(x, area.bottom);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = css("--text-muted");
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  function buildDatasets(view, data) {
+    var v = VIEWS[view], sets = [];
+    var wai = css("--series-wai"), band = css("--series-wai-band"), gdpC = css("--series-gdp");
+    var hasBand = state.band && v.lo && v.hi;
+
+    if (hasBand) {
+      sets.push({ label: "lo", data: data.map(function (r) { return { x: r.t, y: r[v.lo] }; }),
+                  borderWidth: 0, pointRadius: 0, fill: false, order: 4 });
+      sets.push({ label: "95% credible band",
+                  data: data.map(function (r) { return { x: r.t, y: r[v.hi] }; }),
+                  borderWidth: 0, pointRadius: 0, backgroundColor: band, fill: "-1", order: 4 });
+    }
+    sets.push({ label: v.label, data: data.map(function (r) { return { x: r.t, y: r[v.mean] }; }),
+                borderColor: wai, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+                pointHoverBackgroundColor: wai, tension: 0, fill: false, order: 1 });
+
+    if (state.gdp && v.gdp && data.some(function (r) { return r[v.gdp] !== null; })) {
+      sets.push({ label: "Published GDP growth",
+                  data: data.filter(function (r) { return r[v.gdp] !== null; })
+                            .map(function (r) { return { x: r.t, y: r[v.gdp] }; }),
+                  showLine: false, borderColor: gdpC, backgroundColor: gdpC,
+                  pointRadius: 4, pointHoverRadius: 6,
+                  pointBorderColor: css("--surface-1"), pointBorderWidth: 2, order: 0 });
+    }
+    return sets;
+  }
+
+  function renderLegend() {
+    var v = VIEWS[state.view], parts = [];
+    parts.push('<span><i class="swatch" style="background:' + css("--series-wai") + '"></i>WAI</span>');
+    if (state.band && v.lo) {
+      parts.push('<span><i class="swatch band" style="background:' + css("--series-wai-band") + '"></i>95% credible band</span>');
+    }
+    if (state.gdp && v.gdp) {
+      parts.push('<span><i class="swatch dot" style="background:' + css("--series-gdp") + '"></i>Published GDP growth</span>');
+    }
+    document.getElementById("legend").innerHTML = parts.join("");
+  }
+
+  function render() {
+    var data = visibleRows(), v = VIEWS[state.view];
+    if (chart) { chart.destroy(); chart = null; }
+
+    chart = new Chart(document.getElementById("chart"), {
+      type: "line",
+      data: { datasets: buildDatasets(state.view, data) },
+      plugins: [crosshair],
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        animation: false,
+        scales: {
+          x: { type: "time", time: { tooltipFormat: "d MMM yyyy" },
+               grid: { display: false },
+               border: { color: css("--border") },
+               ticks: { color: css("--text-secondary"), maxRotation: 0, autoSkipPadding: 24 } },
+          y: { grid: { color: css("--grid"), drawTicks: false },
+               border: { display: false },
+               ticks: { color: css("--text-secondary"),
+                        callback: function (val) { return val + (v.unit ? v.unit : ""); } },
+               title: { display: true, text: v.label, color: css("--text-muted"),
+                        font: { size: 11 } } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: css("--surface-1"), titleColor: css("--text-primary"),
+            bodyColor: css("--text-secondary"), borderColor: css("--border"), borderWidth: 1,
+            padding: 10, displayColors: true, cornerRadius: 6,
+            filter: function (item) { return item.dataset.label !== "lo"; },
+            callbacks: {
+              label: function (item) {
+                var y = item.parsed.y;
+                if (y === null || y === undefined) return null;
+                var name = item.dataset.label === "95% credible band" ? "upper bound" : item.dataset.label;
+                return name + ": " + y.toFixed(2) + (v.unit || "");
+              }
+            }
+          }
+        }
+      }
+    });
+    renderLegend();
+    renderTable(data);
+  }
+
+  function renderTable(data) {
+    var v = VIEWS[state.view];
+    var cols = [["date", "Date"], [v.mean, "WAI"]];
+    if (v.lo) { cols.push([v.lo, "Lower 95%"]); cols.push([v.hi, "Upper 95%"]); }
+    if (v.gdp) cols.push([v.gdp, "GDP"]);
+
+    var tail = data.slice(-24);
+    document.querySelector("#table thead").innerHTML =
+      "<tr>" + cols.map(function (c) { return "<th>" + c[1] + "</th>"; }).join("") + "</tr>";
+    document.querySelector("#table tbody").innerHTML = tail.map(function (r) {
+      return "<tr>" + cols.map(function (c) {
+        return "<td>" + (c[0] === "date" ? r.date : fmt(r[c[0]])) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    document.getElementById("table-note").textContent =
+      "Last " + tail.length + " of " + data.length + " weeks in the selected range. Use the download buttons for the full series.";
+  }
+
+  function renderStats() {
+    if (!rows.length) return;
+    var last = rows[rows.length - 1];
+    var tiles = [
+      { label: "WAI, QoQ annualised", value: fmt(last.wai_qoq) + "%",
+        note: "95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
+      { label: "WAI, year-over-year", value: fmt(last.wai_yoy) + "%", note: "" },
+      { label: "Level index", value: fmt(last.wai_index, 1), note: "2019Q4 = 100" },
+      { label: "Latest week", value: last.date, note: rows.length.toLocaleString() + " weekly observations" }
+    ];
+    document.getElementById("stats").innerHTML = tiles.map(function (t) {
+      return '<div class="stat"><div class="stat-label">' + t.label + '</div>' +
+             '<div class="stat-value">' + t.value + '</div>' +
+             '<div class="stat-note">' + t.note + "</div></div>";
+    }).join("");
+  }
+
+  function download(name, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function toCSV(data) {
+    var cols = Object.keys(data[0]).filter(function (k) { return k !== "t"; });
+    return cols.join(",") + "\n" + data.map(function (r) {
+      return cols.map(function (c) { return r[c] === null ? "" : r[c]; }).join(",");
+    }).join("\n") + "\n";
+  }
+
+  // --- wiring ------------------------------------------------------------
+  function segHandler(id, apply) {
+    document.getElementById(id).addEventListener("click", function (e) {
+      var btn = e.target.closest("button");
+      if (!btn) return;
+      this.querySelectorAll("button").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b === btn));
+      });
+      apply(btn);
+      render();
+    });
+  }
+  segHandler("view-seg", function (btn) { state.view = btn.dataset.view; });
+  segHandler("range-seg", function (btn) {
+    if (btn.dataset.since) { state.since = Number(btn.dataset.since); state.years = null; }
+    else { state.since = null; state.years = Number(btn.dataset.years); }
+  });
+  document.getElementById("show-band").addEventListener("change", function () { state.band = this.checked; render(); });
+  document.getElementById("show-gdp").addEventListener("change", function () { state.gdp = this.checked; render(); });
+  document.getElementById("show-table").addEventListener("change", function () {
+    document.getElementById("tablewrap").hidden = !this.checked;
+  });
+  document.getElementById("dl-view").addEventListener("click", function () {
+    var d = visibleRows();
+    download("wai_" + state.view + "_" + d[0].date + "_to_" + d[d.length - 1].date + ".csv", toCSV(d));
+  });
+  document.getElementById("dl-full").addEventListener("click", function () { download("wai_data.csv", toCSV(rows)); });
+  document.getElementById("theme-btn").addEventListener("click", function () {
+    var cur = document.documentElement.getAttribute("data-theme");
+    var next = cur === "dark" ? "light" : cur === "light" ? "dark"
+             : (matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("wai-theme", next); } catch (e) { /* private mode */ }
+    render();
+  });
+  try {
+    var saved = localStorage.getItem("wai-theme");
+    if (saved) document.documentElement.setAttribute("data-theme", saved);
+  } catch (e) { /* private mode */ }
+
+  // --- load --------------------------------------------------------------
+  var bust = new Date().toISOString().slice(0, 10);
+
+  fetch("wai_meta.json?v=" + bust)
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (m) { meta = m; })
+    .catch(function () { meta = null; })
+    .then(function () { return fetch("wai_data.csv?v=" + bust); })
+    .then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_data.csv");
+      return r.text();
+    })
+    .then(function (text) {
+      rows = parseCSV(text);
+      if (!rows.length) throw new Error("wai_data.csv contains no rows");
+
+      if (meta && meta.sample) {
+        var b = document.getElementById("sample-banner");
+        b.textContent = meta.sample_note || "This page is showing synthetic sample data, not the Weekly Activity Index.";
+        b.hidden = false;
+      }
+      var asof = (meta && meta.vintage_date) || rows[rows.length - 1].date;
+      document.getElementById("asof").textContent =
+        "Data as of " + asof + (meta && meta.run_timestamp ? " · last updated " + meta.run_timestamp.slice(0, 10) : "");
+      document.getElementById("foot-meta").textContent =
+        "Produced by mfbdfm" + (meta && meta.mfbdfm_version ? " " + meta.mfbdfm_version : "");
+
+      renderStats();
+      render();
+    })
+    .catch(function (err) {
+      showError("Could not load the data: " + err.message +
+                ". wai_data.csv should sit next to this page.");
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "sample": true,
+  "sample_note": "SYNTHETIC SAMPLE DATA for front-end development. Not the Weekly Activity Index. Replaced by the real export once the update pipeline runs.",
+  "vintage_date": "2026-06-07",
+  "run_timestamp": "2026-08-24T15:23:33Z",
+  "last_obs_date": "2026-06-07",
+  "first_obs_date": "1990-01-07",
+  "n_obs": 1749,
+  "latest_wai_qoq": 2.3592,
+  "latest_wai_yoy": 2.7837,
+  "latest_index": 111.2617,
+  "mfbdfm_version": "0.1.0",
+  "columns": [
+    "date",
+    "wai_qoq",
+    "wai_qoq_lo",
+    "wai_qoq_hi",
+    "wai_yoy",
+    "wai_index",
+    "gdp_qoq"
+  ]
+}
