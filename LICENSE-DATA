@@ -1,0 +1,26 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Copyright (c) 2026 Philipp Kronenberg
+
+The published Weekly Activity Index data in this repository -- wai_data.csv and
+wai_meta.json -- is licensed under the Creative Commons Attribution 4.0
+International License.
+
+You are free to share and adapt this data for any purpose, including
+commercially, provided you give appropriate credit, link to the license, and
+indicate if changes were made.
+
+Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
+Human-readable summary: https://creativecommons.org/licenses/by/4.0/
+
+Suggested attribution:
+
+  Weekly Activity Index (WAI), Philipp Kronenberg, CC BY 4.0.
+  https://philippkronenberg.github.io/wai-webapp/
+  Methodology: Kronenberg (2026), Swiss Journal of Economics and Statistics,
+  162:10, https://doi.org/10.1186/s41937-026-00157-w
+
+SCOPE. This license covers only the derived, aggregate model output published
+here. It does NOT extend to the underlying source series used to estimate the
+index, which are licensed from third parties, are not contained in this
+repository, and are not redistributable under these terms.

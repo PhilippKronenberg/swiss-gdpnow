@@ -56,11 +56,25 @@ one.
 
 Written by `export_wai_web()` in `mfbdfm`:
 
-```r
-mfbdfm::export_wai_web("fits/updated/full_RT/fit_<date>.Rda",
-                       dir = "/path/to/wai-webapp",
-                       gdp = mfbdfm::get_real_time_gdp_vintages("quarterly"))
+One command, from the `mfbdfm` repository root on the machine that holds the
+source data:
+
+```sh
+Rscript analysis/update_wai_web.R              # refresh, fit, export, push
+Rscript analysis/update_wai_web.R --dry-run    # everything except the push
+Rscript analysis/update_wai_web.R --skip-prep  # reuse the prepared dataset
 ```
+
+That script refreshes the data, fits the model at the latest vintage, exports
+via `mfbdfm::export_wai_web()`, validates the result against the contract above,
+and commits and pushes here — but only if every check passes and something
+actually changed. Point it at this checkout with `WAI_WEBAPP_DIR`.
+
+It refuses to publish if the header drifts from the contract, if missing values
+are encoded as `NA`, if rows are unsorted or duplicated, if the band does not
+bracket the mean, or if the new series ends *earlier* than the published one —
+that last one being the failure most likely to slip through, since the file is
+perfectly well-formed.
 
 The model is estimated on a host that holds the licensed source data, and only
 the derived aggregate output is pushed here. Nothing from the private
@@ -84,4 +98,20 @@ Mikosch & Neuwirth (2025), *Journal of Applied Econometrics*, 40(3), 270–290,
 
 ## Licence
 
-MIT for the page and its code. Vendored libraries are MIT (Chart.js).
+Two licences, because the code and the results are different things:
+
+- **Code** (`index.html`, everything under `vendor/`) — [MIT](LICENSE).
+  Chart.js and its date adapter are MIT too.
+- **Data** (`wai_data.csv`, `wai_meta.json`) —
+  [CC BY 4.0](LICENSE-DATA). Share and adapt for any purpose, including
+  commercially, with attribution. This is what makes the results freely
+  showable and citable.
+
+The data licence covers the **derived aggregate index only**. The third-party
+source series used to estimate it are licensed from their providers, are not in
+this repository, and are not redistributable under these terms.
+
+Suggested attribution:
+
+> Weekly Activity Index (WAI), Philipp Kronenberg, CC BY 4.0.
+> <https://philippkronenberg.github.io/wai-webapp/>
