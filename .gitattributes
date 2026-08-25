@@ -1,0 +1,16 @@
+# Normalise text files to LF in the repository, whatever the author's platform.
+* text=auto
+
+# Vendored third-party assets are pinned by SHA-256 in vendor/SHA256SUMS.
+# Line-ending conversion would change their bytes per platform and break that
+# pin: a Windows checkout of chart.umd.js is 204962 bytes where the stored blob
+# is 204948, a 14-byte difference that is purely 14 carriage returns. Exempt
+# them from normalisation entirely so the checksum means the same thing
+# everywhere.
+vendor/** -text
+
+# The checksum file itself must stay LF. `sha256sum -c` splits on the exact
+# bytes, so a trailing CR becomes part of the filename and every entry fails
+# with "No such file or directory". Listed after the rule above because the
+# last matching pattern wins.
+vendor/SHA256SUMS text eol=lf
