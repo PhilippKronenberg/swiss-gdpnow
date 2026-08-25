@@ -260,9 +260,9 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     qoq:   { label: "WAI, quarter-on-quarter growth, annualised",
              unit: "%", mean: "wai_qoq", lo: "wai_qoq_lo", hi: "wai_qoq_hi", gdp: "gdp_qoq" },
     yoy:   { label: "WAI, year-over-year growth",
-             unit: "%", mean: "wai_yoy", lo: null, hi: null, gdp: null },
+             unit: "%", mean: "wai_yoy", lo: null, hi: null, gdp: "gdp_yoy" },
     index: { label: "WAI level index (2019Q4 = 100)",
-             unit: "", mean: "wai_index", lo: null, hi: null, gdp: null }
+             unit: "", mean: "wai_index", lo: null, hi: null, gdp: "gdp_index" }
   };
 
   var state = { view: "qoq", years: 5, since: null, band: true, gdp: true };
@@ -354,7 +354,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
                 pointHoverBackgroundColor: wai, tension: 0, fill: false, order: 1 });
 
     if (state.gdp && v.gdp && data.some(function (r) { return r[v.gdp] !== null; })) {
-      sets.push({ label: "Published GDP growth",
+      sets.push({ label: "Published GDP",
                   data: data.filter(function (r) { return r[v.gdp] !== null; })
                             .map(function (r) { return { x: r.t, y: r[v.gdp] }; }),
                   showLine: false, borderColor: gdpC, backgroundColor: gdpC,
@@ -371,7 +371,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       parts.push('<span><i class="swatch band" style="background:' + css("--series-wai-band") + '"></i>95% credible band</span>');
     }
     if (state.gdp && v.gdp) {
-      parts.push('<span><i class="swatch dot" style="background:' + css("--series-gdp") + '"></i>Published GDP growth</span>');
+      parts.push('<span><i class="swatch dot" style="background:' + css("--series-gdp") + '"></i>Published GDP</span>');
     }
     document.getElementById("legend").innerHTML = parts.join("");
   }

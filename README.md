@@ -40,12 +40,18 @@ page performs no estimation — it selects columns.
 | `wai_qoq`, `wai_qoq_lo`, `wai_qoq_hi` | Annualised QoQ growth and its 95% credible band |
 | `wai_yoy` | Year-over-year growth |
 | `wai_index` | Level index, 2019Q4 = 100 |
-| `gdp_qoq` | Published GDP growth, on the last week of its quarter; empty elsewhere |
+| `gdp_qoq`, `gdp_yoy`, `gdp_index` | Published GDP on the same three measures, on the last week of its quarter; empty elsewhere |
 
 Rules the page relies on: no quoting, no embedded commas, ISO dates, **empty
 string** for missing (never `NA`/`NaN`), fixed column order, rows sorted
 ascending, LF line endings. A row whose field count disagrees with the header is
 a hard error rather than a silent misparse.
+
+Official GDP is published on all three measures, on the same scale as the WAI
+series so they share an axis: `gdp_qoq` is annualised percent, `gdp_yoy` is
+percent, `gdp_index` is rebased to 2019Q4 = 100. `mfbdfm::gdp_web_series()` does
+that conversion — the vintage database itself returns log differences and
+fractions, which differ from the WAI scale by a factor of roughly 400.
 
 Only the growth rate carries a band. The level index is a cumulation of the
 growth rate and the model does not supply a compounded credible interval for it,
