@@ -1,0 +1,90 @@
+name: CI
+
+# Nothing used to stand between a commit and the live dashboard. index.html is
+# the entire application and wai_data.csv the entire data layer, so a malformed
+# commit to either published straight to
+# https://philippkronenberg.github.io/wai-webapp/ with nothing in the way.
+#
+# Everything here runs without installing anything into the repository. This
+# project has no build step and no node_modules by design, and CI should not be
+# what introduces one: the validator uses Node built-ins only, and html-validate
+# is fetched by npx at run time rather than declared as a dependency.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Deterministic checks. These gate merges: each one fails only when something
+  # is genuinely wrong, never because a third party had a bad minute.
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Checks wai_data.csv against itself (dates strictly increasing, no
+      # duplicates, numeric columns numeric, confidence bands not crossed),
+      # against wai_meta.json (the metadata restates facts derivable from the
+      # CSV -- n_obs, first/last_obs_date, latest_* -- and index.html reads none
+      # of them, so they can drift silently while the page still looks right),
+      # and that every local src/href in index.html resolves to a file that
+      # exists.
+      - name: Validate data and internal references
+        run: node tools/validate-data.mjs
+
+      # Chart.js is vendored rather than CDN-loaded as a deliberate
+      # supply-chain choice. An unreviewed change to a vendored file is exactly
+      # the risk that choice was meant to remove, so pin the bytes.
+      # Regenerate deliberately when upgrading:
+      #   sha256sum vendor/chart.umd.js vendor/*.min.js > vendor/SHA256SUMS
+      - name: Verify vendored assets are unmodified
+        run: sha256sum -c vendor/SHA256SUMS
+
+      # index.html is the whole application; if it does not parse, the site is
+      # broken. Measured clean on the current file, and confirmed to fail on
+      # malformed input rather than passing everything.
+      - name: Validate HTML
+        run: npx --yes html-validate index.html
+
+  # Advisory, deliberately not a merge gate. External link checking depends on
+  # other people's servers being reachable and willing, which makes it exactly
+  # the kind of check that fails for reasons unrelated to the change under
+  # review. Gating merges on it teaches people to ignore red, which costs more
+  # than the occasional stale link.
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+
+      # 403 counts as alive. index.html cites doi:10.1002/jae.3104, which
+      # resolves to onlinelibrary.wiley.com, and Wiley returns 403 to any
+      # non-browser client -- including one sending a full desktop user agent.
+      # That is bot protection, not a dead link: the DOI is registered and
+      # resolvable. Treating 403 as a failure would make this job permanently
+      # red for a link that is correct.
+      - name: Check links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --accept 200,206,403
+            --max-retries 2
+            index.html README.md
+          fail: true
