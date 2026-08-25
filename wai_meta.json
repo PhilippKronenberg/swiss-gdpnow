@@ -1,12 +1,12 @@
 {
   "vintage_date": "2026-04-07",
-  "run_timestamp": "2026-08-25T13:16:50Z",
+  "run_timestamp": "2026-08-25T14:09:09Z",
   "last_obs_date": "2026-04-07",
   "first_obs_date": "1990-01-07",
   "n_obs": 1741,
-  "latest_wai_qoq": 2.1931,
-  "latest_wai_yoy": 1.2699,
-  "latest_index": 112.8021,
+  "latest_wai_qoq": 1.9261,
+  "latest_wai_yoy": 0.8757,
+  "latest_index": 112.169,
   "mfbdfm_version": "0.1.0",
   "columns": ["date", "wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_yoy", "wai_index", "wai_qoq_q", "wai_yoy_q", "gdp_qoq", "gdp_yoy", "gdp_index"]
 }
