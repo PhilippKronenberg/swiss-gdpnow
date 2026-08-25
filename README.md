@@ -6,12 +6,6 @@ indicator of Swiss GDP growth, estimated with the
 
 Published at <https://philippkronenberg.github.io/wai-webapp/>.
 
-> **The data currently in this repo is synthetic sample data, not the WAI.**
-> It exists so the front end can be built and reviewed before the update
-> pipeline is wired up. The page shows a banner saying so, driven by
-> `"sample": true` in `wai_meta.json`. Both go away when the first real export
-> lands.
-
 ## What this repository is
 
 A static page and the data it reads. No build step, no server, no framework —
@@ -40,6 +34,7 @@ page performs no estimation — it selects columns.
 | `wai_qoq`, `wai_qoq_lo`, `wai_qoq_hi` | Annualised QoQ growth and its 95% credible band |
 | `wai_yoy` | Year-over-year growth |
 | `wai_index` | Level index, 2019Q4 = 100 |
+| `wai_qoq_q`, `wai_yoy_q` | The WAI aggregated to quarterly frequency, on the last week of its quarter; empty elsewhere |
 | `gdp_qoq`, `gdp_yoy`, `gdp_index` | Published GDP on the same three measures, on the last week of its quarter; empty elsewhere |
 
 Rules the page relies on: no quoting, no embedded commas, ISO dates, **empty
@@ -52,6 +47,15 @@ series so they share an axis: `gdp_qoq` is annualised percent, `gdp_yoy` is
 percent, `gdp_index` is rebased to 2019Q4 = 100. `mfbdfm::gdp_web_series()` does
 that conversion — the vintage database itself returns log differences and
 fractions, which differ from the WAI scale by a factor of roughly 400.
+
+**`wai_qoq_q` is the series to compare with `gdp_qoq`; `wai_qoq` is not.**
+Quarterly GDP is a *flow* — the quarter's average activity — so the like-for-like
+aggregate is the quarterly mean of the level index, with growth taken between
+those means. `wai_qoq` is the weekly factor, an instantaneous annualised growth
+rate. Compared correctly the WAI matches published GDP at a correlation of
+**1.000** and an RMSE of **0.04pp** across 143 quarters; compared against quarter
+*endpoints* it appears to miss 2020Q2 entirely, because activity collapsed and
+recovered inside that quarter.
 
 Only the growth rate carries a band. The level index is a cumulation of the
 growth rate and the model does not supply a compounded credible interval for it,
