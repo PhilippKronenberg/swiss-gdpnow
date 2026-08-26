@@ -39,6 +39,12 @@
   --series-gdp:     #eb6834;
   --series-waiq:    #1baf7a;
   --accent-soft:    #eaf1fc;
+  --brand:          #276873;
+  --brand-dark:     #173f47;
+  --on-brand:       #ffffff;
+  --on-brand-soft:  rgba(255, 255, 255, 0.86);
+  --on-brand-muted: rgba(255, 255, 255, 0.70);
+  --on-brand-line:  rgba(255, 255, 255, 0.45);
   --warn-bg:        #fdf3e3;
   --warn-border:    #e8c98d;
   --warn-text:      #6b4a08;
@@ -61,6 +67,15 @@
     --series-gdp:     #d95926;
     --series-waiq:    #199e70;
     --accent-soft:    #17263a;
+    /* The light palette's #173f47 header would sink into a #121211 page, and
+       #276873 title text would fall below AA on it. Lifted for dark, keeping
+       the same green hue. */
+    --brand:          #5fb0bd;
+    --brand-dark:     #1b4d57;
+    --on-brand:       #ffffff;
+    --on-brand-soft:  rgba(255, 255, 255, 0.86);
+    --on-brand-muted: rgba(255, 255, 255, 0.70);
+    --on-brand-line:  rgba(255, 255, 255, 0.45);
     --warn-bg:        #33290f;
     --warn-border:    #6d5720;
     --warn-text:      #f0d9a4;
@@ -101,11 +116,19 @@ body {
 }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
 
-header { margin-bottom: 24px; }
+/* Full-bleed brand band. The header sits outside .wrap so its background spans
+   the viewport, with an inner .wrap keeping its text aligned with the page. */
+header { background: var(--brand-dark); color: var(--on-brand); padding: 34px 0 30px; }
+header .wrap { padding: 0 20px; }
 .titlebar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-h1 { font-size: 1.75rem; font-weight: 650; letter-spacing: -0.02em; }
-.subtitle { color: var(--text-secondary); font-size: 0.97rem; margin-top: 4px; max-width: 62ch; }
-.asof { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; }
+h1 { font-size: 2.05rem; font-weight: 650; letter-spacing: -0.02em; color: var(--on-brand); }
+.subtitle { color: var(--on-brand-soft); font-size: 1.05rem; margin-top: 6px; }
+.asof { color: var(--on-brand-muted); font-size: 0.9rem; margin-top: 12px; }
+
+/* The theme toggle sits on the brand band, so it cannot use the surface tokens
+   the other buttons use -- they would give a light button on a dark green bar. */
+header .icon-btn { background: transparent; color: var(--on-brand); border-color: var(--on-brand-line); }
+header .icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--on-brand); }
 
 .icon-btn {
   flex: none; background: var(--surface-1); color: var(--text-secondary);
@@ -124,9 +147,9 @@ h1 { font-size: 1.75rem; font-weight: 650; letter-spacing: -0.02em; }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .stat { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-.stat-label { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
-.stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.stat-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+.stat-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--brand); font-weight: 600; }
+.stat-value { font-size: 1.7rem; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.stat-note { font-size: 0.85rem; color: var(--text-muted); margin-top: 3px; }
 
 .controls {
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
@@ -134,19 +157,22 @@ h1 { font-size: 1.75rem; font-weight: 650; letter-spacing: -0.02em; }
   border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
 }
 .ctl-group { display: flex; align-items: center; gap: 8px; }
-.ctl-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.ctl-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--brand); font-weight: 600; }
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .seg button {
   background: var(--surface-1); border: 0; border-right: 1px solid var(--border);
-  padding: 6px 12px; font-size: 0.87rem; color: var(--text-secondary); cursor: pointer; font-family: inherit;
+  padding: 7px 14px; font-size: 0.94rem; color: var(--text-secondary); cursor: pointer; font-family: inherit;
 }
 .seg button:last-child { border-right: 0; }
-.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text-primary); font-weight: 600; }
+/* The pressed state carries the brand colour, so it needs white on top of it
+   rather than the default body text colour. */
+.seg button[aria-pressed="true"] { background: var(--brand); color: var(--on-brand); font-weight: 600; }
 .seg button:focus-visible { outline: 2px solid var(--series-wai); outline-offset: -2px; }
-label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--text-secondary); cursor: pointer; }
-label.check input { accent-color: var(--series-wai); width: 15px; height: 15px; }
+label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; color: var(--text-secondary); cursor: pointer; }
+label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
 
-.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 2px 8px; font-size: 0.88rem; color: var(--text-secondary); }
+/* Sits below the chart, not above it -- see the markup. */
+.legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 12px 2px 0; font-size: 0.95rem; color: var(--text-secondary); }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
 .swatch { width: 14px; height: 3px; border-radius: 2px; flex: none; }
 .swatch.dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface-1); }
@@ -154,34 +180,34 @@ label.check input { accent-color: var(--series-wai); width: 15px; height: 15px; 
 
 .chart-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px 8px; }
 .chart-box { position: relative; height: 420px; }
-@media (max-width: 640px) { .chart-box { height: 320px; } h1 { font-size: 1.4rem; } }
+@media (max-width: 640px) { .chart-box { height: 320px; } h1 { font-size: 1.6rem; } header { padding: 26px 0 22px; } }
 
 .tablewrap { margin-top: 14px; overflow-x: auto; }
 .tablewrap[hidden] { display: none; }
 table { border-collapse: collapse; width: 100%; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
 th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; }
-th { color: var(--text-muted); font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em; }
+th { color: var(--brand); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .btn {
-  background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px 14px; font-size: 0.88rem; color: var(--text-secondary);
-  cursor: pointer; font-family: inherit; text-decoration: none;
+  background: var(--brand); border: 1px solid var(--brand); border-radius: 8px;
+  padding: 9px 16px; font-size: 0.94rem; color: var(--on-brand);
+  cursor: pointer; font-family: inherit; text-decoration: none; font-weight: 600;
 }
-.btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
+.btn:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: var(--on-brand); }
 
-section.notes { margin-top: 36px; font-size: 0.92rem; color: var(--text-secondary); }
-section.notes h2 { font-size: 1.05rem; color: var(--text-primary); margin-bottom: 8px; font-weight: 620; }
-section.notes p { margin-bottom: 12px; max-width: 72ch; }
+/* No max-width cap on the prose: the text runs the full width of the page. */
+section.notes { margin-top: 36px; font-size: 1rem; color: var(--text-secondary); }
+section.notes h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 8px; font-weight: 650; }
+section.notes p { margin-bottom: 12px; }
 section.notes a { color: var(--series-wai); }
-footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.83rem; color: var(--text-muted); }
+footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.88rem; color: var(--text-muted); }
 </style>
 </head>
 <body>
-<div class="wrap">
-
 <header>
+  <div class="wrap">
   <div class="titlebar">
     <div>
       <h1>Weekly Activity Index</h1>
@@ -190,7 +216,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     </div>
     <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch colour theme">Theme</button>
   </div>
+  </div>
 </header>
+
+<div class="wrap">
 
 <div class="banner banner-warn" id="sample-banner" hidden></div>
 <div class="banner banner-err" id="error-banner" hidden></div>
@@ -222,10 +251,9 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <label class="check"><input type="checkbox" id="show-table"> Data table</label>
 </div>
 
-<div class="legend" id="legend"></div>
-
 <div class="chart-card">
   <div class="chart-box"><canvas id="chart"></canvas></div>
+  <div class="legend" id="legend"></div>
 </div>
 
 <div class="tablewrap" id="tablewrap" hidden>
@@ -465,12 +493,25 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   function renderStats() {
     if (!rows.length) return;
     var last = rows[rows.length - 1];
+    var first = rows[0];
+
+    // Every tile states the date or span it refers to. Without that the figures
+    // read as "now", when they are as of the latest weekly observation -- and
+    // the two growth measures cover quite different windows, which the numbers
+    // alone do not reveal.
+    var yearAgo = new Date(last.t);
+    yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
+    var yearAgoStr = isFinite(yearAgo.getTime()) ? yearAgo.toISOString().slice(0, 10) : null;
+
     var tiles = [
       { label: "WAI, QoQ annualised", value: fmt(last.wai_qoq) + "%",
-        note: "95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
-      { label: "WAI, year-over-year", value: fmt(last.wai_yoy) + "%", note: "" },
-      { label: "Level index", value: fmt(last.wai_index, 1), note: "2019Q4 = 100" },
-      { label: "Latest week", value: last.date, note: rows.length.toLocaleString() + " weekly observations" }
+        note: "week ending " + last.date + ", 95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
+      { label: "WAI, year-over-year", value: fmt(last.wai_yoy) + "%",
+        note: yearAgoStr ? yearAgoStr + " to " + last.date : "12 months to " + last.date },
+      { label: "Level index", value: fmt(last.wai_index, 1),
+        note: "at " + last.date + ", 2019Q4 = 100" },
+      { label: "Latest week", value: last.date,
+        note: first.date + " to " + last.date + ", " + rows.length.toLocaleString() + " weekly observations" }
     ];
     document.getElementById("stats").innerHTML = tiles.map(function (t) {
       return '<div class="stat"><div class="stat-label">' + t.label + '</div>' +
