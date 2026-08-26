@@ -221,12 +221,18 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
 
 <div class="wrap">
 
+<!-- The dashboard proper, so assistive technology has one "skip to content"
+     target. The footer stays outside it: a <footer> nested inside <main> is no
+     longer the page's contentinfo landmark, which would leave its own content
+     sitting outside every landmark. -->
+<main>
+
 <div class="banner banner-warn" id="sample-banner" hidden></div>
 <div class="banner banner-err" id="error-banner" hidden></div>
 
-<div class="stats" id="stats"></div>
+<section class="stats" id="stats" aria-label="Latest readings"></section>
 
-<div class="controls">
+<section class="controls" aria-label="Chart controls">
   <div class="ctl-group">
     <span class="ctl-label" id="lbl-view">View</span>
     <div class="seg" role="group" aria-labelledby="lbl-view" id="view-seg">
@@ -249,12 +255,12 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <label class="check"><input type="checkbox" id="show-gdp" checked> Published GDP</label>
   <label class="check"><input type="checkbox" id="show-waiq" checked> WAI, quarterly</label>
   <label class="check"><input type="checkbox" id="show-table"> Data table</label>
-</div>
+</section>
 
-<div class="chart-card">
+<section class="chart-card" aria-label="Weekly Activity Index chart">
   <div class="chart-box"><canvas id="chart"></canvas></div>
   <div class="legend" id="legend"></div>
-</div>
+</section>
 
 <div class="tablewrap" id="tablewrap" hidden>
   <table id="table"><thead></thead><tbody></tbody></table>
@@ -266,8 +272,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <button class="btn" id="dl-full" type="button">Download full data (CSV)</button>
 </div>
 
-<section class="notes">
-  <h2>About the index</h2>
+<section class="notes" aria-labelledby="notes-title">
+  <h2 id="notes-title">About the index</h2>
   <p>The WAI extracts a single dynamic factor from weekly, monthly and quarterly Swiss indicators. Missing and mixed-frequency observations are handled by data augmentation, the state equation carries stochastic volatility so crisis periods are not smoothed away, and the factor's loading on GDP is fixed at one — which is what makes the index interpretable as a GDP growth rate rather than an abstract index.</p>
   <p><strong>Why two WAI lines on the growth charts.</strong> The blue line is the weekly index: an instantaneous annualised growth rate, read every week. Quarterly GDP is a <em>flow</em> &mdash; the average level of activity across the whole quarter &mdash; so the like-for-like comparison is the green series, the weekly index averaged over each quarter. The difference is not cosmetic. Across 2020Q2 activity collapsed and largely recovered inside the quarter, so the weekly rate ends the quarter near zero while the quarterly average is about &minus;23% annualised, which is what GDP reported. Compared correctly, the WAI matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points across 143 quarters.</p>
   <p>Shaded areas are 95% credible bands from the posterior. They are shown for the growth-rate views only: the level index is a cumulation of the growth rate, and the model does not supply a compounded credible interval for it, so no band is drawn rather than one that would look like a level band without being one.</p>
@@ -275,6 +281,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <p>The index is produced by the open-source <a href="https://github.com/PhilippKronenberg/mfbdfm">mfbdfm</a> R package (<a href="https://philippkronenberg.github.io/mfbdfm/">documentation</a>). This page reads a single CSV that the package writes; it performs no estimation of its own.</p>
   <p>The index is free to reuse. The published data is licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> — share and adapt it for any purpose, including commercially, with attribution — and the page's own code is MIT. That covers the derived index only; the third-party source series behind it are not redistributable.</p>
 </section>
+
+</main>
 
 <footer>
   <span id="foot-meta"></span> ·
