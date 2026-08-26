@@ -33,12 +33,21 @@
   --grid:           #ebeae6;
   --text-primary:   #0b0b0b;
   --text-secondary: #52514e;
-  --text-muted:     #78776f;
+  /* 4.87:1 on --surface-0, 5.14:1 on --surface-1. The muted grey used to be
+     #78776f, which reads as small print but measures 4.16:1 and 4.38:1 -- both
+     under AA. Darkened just far enough to clear it and no further, so the stat
+     notes and the footer still recede from --text-secondary. */
+  --text-muted:     #6d6c65;
   --series-wai:     #2a78d6;
   --series-wai-band:rgba(42, 120, 214, 0.16);
   --series-gdp:     #eb6834;
   --series-waiq:    #1baf7a;
   --accent-soft:    #eaf1fc;
+  /* Links are their own token rather than reusing --series-wai. The chart's
+     blue is a graphical object, which AA holds to 3:1 and it passes; the same
+     blue as body text measures 4.08:1 and fails. Darkening the shared token
+     would have repainted the chart line to fix the prose. */
+  --link:           #2269c4;
   --brand:          #276873;
   --brand-dark:     #173f47;
   --on-brand:       #ffffff;
@@ -67,6 +76,9 @@
     --series-gdp:     #d95926;
     --series-waiq:    #199e70;
     --accent-soft:    #17263a;
+    /* Dark's own value, not light's: #2269c4 measures 3.47:1 on a #121211
+       page. This one is 5.15:1. */
+    --link:           #3987e5;
     /* The light palette's #173f47 header would sink into a #121211 page, and
        #276873 title text would fall below AA on it. Lifted for dark, keeping
        the same green hue. */
@@ -98,6 +110,18 @@
   --series-gdp:     #d95926;
   --series-waiq:    #199e70;
   --accent-soft:    #17263a;
+  --link:           #3987e5;
+  /* These six were missing from this block, so the toggle-driven dark theme
+     fell back to the light :root for them and painted --brand #276873 onto a
+     #1a1a19 tile -- 2.74:1. A reader on a light system who chose dark got the
+     stat labels, the control labels and the notes heading below AA, while the
+     same page under a dark system was fine. Same values as the media block. */
+  --brand:          #5fb0bd;
+  --brand-dark:     #1b4d57;
+  --on-brand:       #ffffff;
+  --on-brand-soft:  rgba(255, 255, 255, 0.86);
+  --on-brand-muted: rgba(255, 255, 255, 0.70);
+  --on-brand-line:  rgba(255, 255, 255, 0.45);
   --warn-bg:        #33290f;
   --warn-border:    #6d5720;
   --warn-text:      #f0d9a4;
@@ -201,7 +225,7 @@ th { color: var(--brand); font-weight: 600; font-size: 0.82rem; text-transform: 
 section.notes { margin-top: 36px; font-size: 1rem; color: var(--text-secondary); }
 section.notes h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 8px; font-weight: 650; }
 section.notes p { margin-bottom: 12px; }
-section.notes a { color: var(--series-wai); }
+section.notes a { color: var(--link); }
 footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.88rem; color: var(--text-muted); }
 </style>
 </head>
