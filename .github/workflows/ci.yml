@@ -88,3 +88,93 @@ jobs:
             --max-retries 2
             index.html README.md
           fail: true
+
+  # Also advisory, and for a different reason than links: this one reports on
+  # the page as it stands rather than on the change under review, so on the day
+  # it was added it was already red. Gating merges on it would mean every
+  # unrelated PR carries the cost of whatever the page has always done. Promote
+  # it to a gate once the backlog it reports is empty -- moving this job into
+  # `check` is then a two-line change.
+  #
+  # Nothing is installed into the repository. axe is fetched by npx the way
+  # html-validate is, Chrome and chromedriver are preinstalled on the runner,
+  # and the server is Python's stdlib one.
+  a11y:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # index.html fetches wai_data.csv and wai_meta.json, and browsers block
+      # fetch() over file://. Pointed at the file, an auditor would grade the
+      # error banner -- a nearly empty page that reports almost nothing and
+      # looks like a pass. It has to be served.
+      - name: Serve the page
+        run: |
+          python3 -m http.server 8787 --bind 127.0.0.1 >/tmp/http.log 2>&1 &
+          for _ in $(seq 1 20); do
+            if curl -sf -o /dev/null http://127.0.0.1:8787/index.html; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "::error::local server never answered on 127.0.0.1:8787"
+          exit 1
+
+      # The failure this guards against is silent: if the data never arrives,
+      # axe still runs, still reports, and still looks like a real audit of a
+      # page that mostly is not there. So assert on the parts of the DOM that
+      # only exist once the CSV has been fetched and drawn -- the stat tiles are
+      # built by renderStats(), and the canvas only carries width/height
+      # attributes once Chart.js has sized it.
+      - name: Confirm the dashboard rendered
+        run: |
+          google-chrome --headless --no-sandbox --disable-gpu \
+            --virtual-time-budget=8000 --dump-dom \
+            http://127.0.0.1:8787/ >/tmp/dumped.html 2>/dev/null
+          # renderStats() builds the tiles from a string literal that contains
+          # the tile markup, and --dump-dom serialises the inline script along
+          # with everything else. Grep the raw dump and the source counts as a
+          # rendered tile even when nothing rendered at all.
+          perl -0777 -pe 's{<script\b.*?</script>}{}gsi' \
+            /tmp/dumped.html >/tmp/rendered.html
+          tiles=$(grep -o 'class="stat-value"' /tmp/rendered.html | wc -l)
+          echo "stat tiles rendered: $tiles"
+          grep -o '<canvas id="chart"[^>]*>' /tmp/rendered.html || true
+          [ "$tiles" -ge 1 ] \
+            || { echo "::error::no stat tiles -- the data never loaded"; exit 1; }
+          grep -q '<canvas id="chart" width=' /tmp/rendered.html \
+            || { echo "::error::chart canvas was never sized by Chart.js"; exit 1; }
+          grep -q 'class="controls"' /tmp/rendered.html \
+            || { echo "::error::controls missing from the rendered page"; exit 1; }
+          grep -q 'id="error-banner" hidden' /tmp/rendered.html \
+            || { echo "::error::the page is showing its error banner"; exit 1; }
+
+      # Pinned to the major because the flags below are a CLI contract; the rule
+      # set inside it is free to move, since nothing here gates on the result.
+      # --exit makes this step red when there are violations, which is the point
+      # -- continue-on-error keeps that from blocking anyone.
+      - name: Audit accessibility
+        run: |
+          driver="${CHROMEWEBDRIVER:+$CHROMEWEBDRIVER/chromedriver}"
+          [ -x "$driver" ] || driver="$(command -v chromedriver)"
+          npx --yes @axe-core/cli@4 http://127.0.0.1:8787/ \
+            --chromedriver-path "$driver" \
+            --chrome-options="headless,no-sandbox,disable-gpu,disable-dev-shm-usage" \
+            --load-delay 2000 \
+            --dir /tmp --save axe-results.json \
+            --exit
+
+      # The CLI already prints its findings, but they scroll past in a log
+      # nobody opens. Restate them on the run summary page instead.
+      - name: Summarise findings
+        if: always()
+        run: |
+          [ -f /tmp/axe-results.json ] || exit 0
+          node .github/scripts/a11y-summary.mjs /tmp/axe-results.json \
+            >> "$GITHUB_STEP_SUMMARY"
