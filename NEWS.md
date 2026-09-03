@@ -19,6 +19,22 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
+## 2026-09-03
+
+- *Presentation.* The four accent-backed controls — the pressed View and Range
+  buttons and the two download buttons — now clear WCAG AA in dark mode. White
+  on the lifted dark `--brand` measured 2.49:1; the controls take a near-black
+  label instead and read 7.01:1. `--on-brand` could not simply be darkened,
+  because in dark it serves two backgrounds that disagree: the header band
+  stays dark enough to want white (9.35:1), while `--brand` is now light enough
+  to want dark text. So the token was split — `--on-brand` keeps the header,
+  a new `--on-accent` takes the controls — and `.btn:hover` moved to its own
+  `--accent-hover`, which lifts rather than darkens in dark mode so a
+  near-black label stays readable. **Light mode is byte-identical in output**:
+  `--on-accent` is the same white as `--on-brand` and `--accent-hover` the same
+  `#173f47` as `--brand-dark`, so it is a pure refactor there and a real change
+  only in the two dark blocks, both of which carry the new tokens (#15).
+
 ## 2026-08-27
 
 - *Presentation.* Muted text and links now clear WCAG AA. `--text-muted` — the
