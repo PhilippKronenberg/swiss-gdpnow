@@ -54,6 +54,13 @@
   --on-brand-soft:  rgba(255, 255, 255, 0.86);
   --on-brand-muted: rgba(255, 255, 255, 0.70);
   --on-brand-line:  rgba(255, 255, 255, 0.45);
+  /* --on-brand covers the header band (--brand-dark); these two cover the
+     accent-backed controls (--brand) -- the pressed segmented buttons and the
+     download buttons. In light both foregrounds are white and the split looks
+     redundant. In dark they disagree: the header stays dark enough for white
+     while --brand lifts to a pale teal that needs dark text on it. */
+  --on-accent:      #ffffff;
+  --accent-hover:   #173f47;
   --warn-bg:        #fdf3e3;
   --warn-border:    #e8c98d;
   --warn-text:      #6b4a08;
@@ -88,6 +95,13 @@
     --on-brand-soft:  rgba(255, 255, 255, 0.86);
     --on-brand-muted: rgba(255, 255, 255, 0.70);
     --on-brand-line:  rgba(255, 255, 255, 0.45);
+    /* White on the lifted --brand #5fb0bd is 2.49:1, so the accent-backed
+       controls take a near-black instead: 7.01:1. The header keeps white,
+       because it sits on --brand-dark, not --brand. The button hover also has
+       to lift rather than darken -- the light theme's #173f47 under near-black
+       text would be unreadable -- so --accent-hover goes paler here, 9.67:1. */
+    --on-accent:      #0d1c1f;
+    --accent-hover:   #8ccbd6;
     --warn-bg:        #33290f;
     --warn-border:    #6d5720;
     --warn-text:      #f0d9a4;
@@ -122,6 +136,9 @@
   --on-brand-soft:  rgba(255, 255, 255, 0.86);
   --on-brand-muted: rgba(255, 255, 255, 0.70);
   --on-brand-line:  rgba(255, 255, 255, 0.45);
+  /* Same values as the media block -- see the comment there. */
+  --on-accent:      #0d1c1f;
+  --accent-hover:   #8ccbd6;
   --warn-bg:        #33290f;
   --warn-border:    #6d5720;
   --warn-text:      #f0d9a4;
@@ -188,9 +205,10 @@ header .icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--on-
   padding: 7px 14px; font-size: 0.94rem; color: var(--text-secondary); cursor: pointer; font-family: inherit;
 }
 .seg button:last-child { border-right: 0; }
-/* The pressed state carries the brand colour, so it needs white on top of it
-   rather than the default body text colour. */
-.seg button[aria-pressed="true"] { background: var(--brand); color: var(--on-brand); font-weight: 600; }
+/* The pressed state carries the brand colour, so it needs the accent
+   foreground on top of it rather than the default body text colour -- white in
+   light, near-black in dark, where --brand is a pale teal. */
+.seg button[aria-pressed="true"] { background: var(--brand); color: var(--on-accent); font-weight: 600; }
 .seg button:focus-visible { outline: 2px solid var(--series-wai); outline-offset: -2px; }
 label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; color: var(--text-secondary); cursor: pointer; }
 label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
@@ -216,10 +234,12 @@ th { color: var(--brand); font-weight: 600; font-size: 0.82rem; text-transform: 
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .btn {
   background: var(--brand); border: 1px solid var(--brand); border-radius: 8px;
-  padding: 9px 16px; font-size: 0.94rem; color: var(--on-brand);
+  padding: 9px 16px; font-size: 0.94rem; color: var(--on-accent);
   cursor: pointer; font-family: inherit; text-decoration: none; font-weight: 600;
 }
-.btn:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: var(--on-brand); }
+/* --accent-hover rather than --brand-dark: the header's dark green is the wrong
+   direction in dark mode, where the label is near-black. */
+.btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
 
 /* No max-width cap on the prose: the text runs the full width of the page. */
 section.notes { margin-top: 36px; font-size: 1rem; color: var(--text-secondary); }
