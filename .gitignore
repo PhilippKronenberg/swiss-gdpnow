@@ -1,0 +1,41 @@
+# There is no build step and no dependency here, so almost nothing needs
+# ignoring: everything in this repository is either the page, the data it
+# reads, or something CI runs. Nothing generated is listed below because
+# nothing is generated, and nothing the published page serves is listed
+# either - wai_data.csv, wai_meta.json and vendor/ are all fetched by
+# index.html at run time and must stay tracked.
+
+# macOS Finder metadata and resource forks
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows Explorer thumbnail and folder-view caches
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux file-manager folder settings
+.directory
+
+# Per-developer editor state. Not part of the project, and different for
+# whoever opens it.
+.vscode/
+.idea/
+*~
+*.swp
+
+# npm installs nothing into this directory. CI's only npm call is
+# `npx html-validate index.html`, which resolves into npm's own cache
+# elsewhere - html-validate is deliberately never declared as a dependency,
+# because CI must not be the thing that introduces one into a repository
+# that has none.
+#
+# These two lines are therefore not an invitation to add a package.json.
+# They are there so that a local `npm install`, run once while debugging
+# that command, cannot put several thousand files into a commit. A stray
+# package.json is left visible on purpose: it is one reviewable line in a
+# diff, and it should be noticed rather than silently ignored.
+node_modules/
+package-lock.json
