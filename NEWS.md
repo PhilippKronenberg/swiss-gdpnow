@@ -101,10 +101,11 @@ published.
   aggregated the way GDP is actually measured. Quarterly GDP is a flow, the
   quarter's average activity, while `wai_qoq` is an instantaneous annualised
   rate, so the weekly line and the GDP points are not point-comparable. Across
-  2020Q2 activity collapsed and recovered inside the quarter, leaving the
-  weekly rate near zero where the quarterly average is -22.9% against GDP's
-  -23.1%. Showing only the weekly line beside GDP invited exactly that
-  misreading.
+  2020Q2 activity collapsed and recovered inside the quarter, so the two
+  measures answer different questions: on the last week of that quarter
+  `wai_qoq` reads +45.9% as activity rebounds, while the quarter's average
+  growth is -23.2% against GDP's -23.1%. Showing only the weekly line beside
+  GDP invited exactly that misreading.
 
 - **Data.** *Presentation.* Published GDP is shown on all three views rather
   than on QoQ alone: `gdp_yoy` and `gdp_index` join `gdp_qoq` in the CSV, each
