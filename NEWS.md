@@ -19,6 +19,23 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
+## 2026-09-03
+
+- The advisory `a11y` job now audits all three palettes instead of one. It ran
+  in a headless browser at its default settings, which is to say the light
+  `:root` and nothing else — and both contrast bugs the page has produced lived
+  in a dark block, so **CI was green through both of them**. There are three
+  passes now: `light`, `dark-toggle`, which presses the theme button, and
+  `dark-media`, which emulates a dark operating system. The two dark passes are
+  not redundant. The worse of the two bugs existed only in
+  `:root[data-theme="dark"]`, so a run that reached dark through the media
+  query alone would still have reported a clean page. Replayed against both
+  bugs, the new passes report them at the ratios they were measured at by hand
+  — 2.74:1 and 2.49:1 — while the light pass stays green, which is exactly the
+  history. Nothing was installed to do it: `@axe-core/cli` has no way to set a
+  theme before it audits, so the job drives the runner's own chromedriver over
+  HTTP from a Node script using built-ins only (#20).
+
 ## 2026-08-27
 
 - *Presentation.* Muted text and links now clear WCAG AA. `--text-muted` — the
