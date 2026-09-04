@@ -19,6 +19,24 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
+## 2026-09-04
+
+- *Presentation.* The page now says something when JavaScript is off. Every
+  visible number is drawn at run time from the CSV, so a reader with JavaScript
+  disabled or blocked got a header, a row of controls that did nothing, and
+  blank space — with no indication that anything was wrong. A `<noscript>`
+  banner explains it and links straight to `wai_data.csv`, which is a published
+  file and needs no JavaScript to read (#23).
+
+- *Presentation.* The chart has a text alternative. The `<canvas>` was empty:
+  no fallback content, no role and no label, so for anyone not looking at it the
+  figure was simply absent — and axe never flagged it, because an empty canvas
+  with no role could equally well be decorative. It now carries `role="img"` and
+  a label rewritten on every render, naming the series actually plotted, the
+  span covered and the latest reading. The page always had a genuine
+  alternative in the Data table, but it is off by default and nothing connected
+  the two; both the label and the canvas fallback now point at it (#23).
+
 ## 2026-08-27
 
 - *Presentation.* Muted text and links now clear WCAG AA. `--text-muted` — the

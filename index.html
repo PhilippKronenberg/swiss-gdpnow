@@ -185,6 +185,11 @@ header .icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--on-
 .banner-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .banner-err  { background: var(--err-bg);  border-color: var(--err-border);  color: var(--err-text); }
 .banner[hidden] { display: none; }
+/* Links inside a banner take the banner's own foreground rather than --link,
+   which is tuned for --surface-0 and would sit on --warn-bg here -- a colour
+   that differs between the light and dark palettes. Inheriting keeps whatever
+   ratio the banner text already clears; the underline carries the affordance. */
+.banner a { color: inherit; text-decoration: underline; }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .stat { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
@@ -271,6 +276,22 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
      sitting outside every landmark. -->
 <main>
 
+<!-- Everything below this point is drawn by the script at the foot of the page:
+     the stat tiles, the chart and the table are all built from the CSV at run
+     time, so with JavaScript off the page is a header above blank space and a
+     row of controls that do nothing. Say so, and point at the CSV, which is a
+     published file in this repository and needs no JavaScript to read. -->
+<noscript>
+  <div class="banner banner-warn">
+    <strong>This dashboard needs JavaScript.</strong> The readings, the chart and
+    the data table are drawn in your browser from a single CSV file, so with
+    JavaScript disabled or blocked the rest of this page stays empty and its
+    controls do nothing. The data itself does not need JavaScript:
+    <a href="wai_data.csv">download wai_data.csv</a> — the full weekly series,
+    <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+  </div>
+</noscript>
+
 <div class="banner banner-warn" id="sample-banner" hidden></div>
 <div class="banner banner-err" id="error-banner" hidden></div>
 
@@ -302,7 +323,19 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
 </section>
 
 <section class="chart-card" aria-label="Weekly Activity Index chart">
-  <div class="chart-box"><canvas id="chart"></canvas></div>
+  <!-- role="img" plus an aria-label is what gives the figure a text
+       alternative; describeChart() rewrites the label on every render, because
+       what is drawn changes with the view, the range and the four checkboxes.
+       The markup label is the pre-load state. The content between the tags is
+       canvas fallback: it is what a browser without canvas support shows, and
+       Chart.js leaves it alone (it only ever rewrites the width and height
+       attributes). -->
+  <div class="chart-box"><canvas id="chart" role="img"
+       aria-label="Chart of the Weekly Activity Index. It is still loading; the same numbers are available from the Data table checkbox above.">
+    <p>Your browser cannot display this chart. The same series is available as
+    text: tick the <strong>Data table</strong> checkbox above, or
+    <a href="wai_data.csv">download wai_data.csv</a>.</p>
+  </canvas></div>
   <div class="legend" id="legend"></div>
 </section>
 
@@ -477,6 +510,46 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     document.getElementById("legend").innerHTML = parts.join("");
   }
 
+  // The canvas is the only element on the page carrying information it does not
+  // also state in text, and what it draws changes with the view, the range and
+  // the four checkboxes -- so its description is rebuilt on every render, next
+  // to the legend, rather than written once into the markup. It names the
+  // series actually plotted (the same conditions buildDatasets uses, so the
+  // description cannot claim a line that was dropped for want of data) and ends
+  // by pointing at the Data table, which is the page's real alternative to the
+  // figure but is off by default and otherwise goes unmentioned.
+  function describeChart(data) {
+    var v = VIEWS[state.view], el = document.getElementById("chart"), parts;
+    // Same guard fmt() uses: a column absent from the CSV reads as undefined,
+    // which would otherwise survive a !== null filter and poison the min/max.
+    var vals = data.filter(function (r) { return r[v.mean] !== null && !isNaN(r[v.mean]); });
+
+    if (!vals.length) {
+      parts = ["Chart of " + v.label + ". No observations fall in the selected range."];
+    } else {
+      var first = vals[0], last = vals[vals.length - 1];
+      var lo = last[v.mean], hi = lo, d = state.view === "index" ? 1 : 2;
+      vals.forEach(function (r) {
+        if (r[v.mean] < lo) lo = r[v.mean];
+        if (r[v.mean] > hi) hi = r[v.mean];
+      });
+      var also = [];
+      if (state.band && v.lo) also.push("a 95% credible band");
+      if (state.waiq && v.quarterly && data.some(function (r) { return r[v.quarterly] !== null; })) {
+        also.push("the WAI aggregated to quarterly");
+      }
+      if (state.gdp && v.gdp && data.some(function (r) { return r[v.gdp] !== null; })) {
+        also.push("published GDP");
+      }
+      parts = ["Line chart of " + v.label + ", weekly from " + first.date + " to " + last.date + ".",
+               "Latest " + fmt(last[v.mean], d) + v.unit + ", ranging from " + fmt(lo, d) + v.unit +
+               " to " + fmt(hi, d) + v.unit + " over that span."];
+      if (also.length) parts.push("Also plotted: " + also.join(", ") + ".");
+    }
+    parts.push("The same figures are available as text from the Data table checkbox above.");
+    el.setAttribute("aria-label", parts.join(" "));
+  }
+
   function render() {
     var data = visibleRows(), v = VIEWS[state.view];
     if (chart) { chart.destroy(); chart = null; }
@@ -521,6 +594,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       }
     });
     renderLegend();
+    describeChart(data);
     renderTable(data);
   }
 
