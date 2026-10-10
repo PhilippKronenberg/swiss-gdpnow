@@ -336,12 +336,14 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
        The markup label is the pre-load state. The content between the tags is
        canvas fallback: it is what a browser without canvas support shows, and
        Chart.js leaves it alone (it only ever rewrites the width and height
-       attributes). -->
+       attributes). It must hold no link or other focusable element: an img's
+       children are presentational, and axe fails a focusable one inside it
+       (nested-interactive). -->
   <div class="chart-box"><canvas id="chart" role="img"
        aria-label="Chart of the Weekly Activity Index. It is still loading; the same numbers are available from the Data table checkbox above.">
     <p>Your browser cannot display this chart. The same series is available as
-    text: tick the <strong>Data table</strong> checkbox above, or
-    <a href="wai_data.csv">download wai_data.csv</a>.</p>
+    text: tick the <strong>Data table</strong> checkbox above, or use the
+    download buttons below the chart.</p>
   </canvas></div>
   <div class="legend" id="legend"></div>
 </section>
