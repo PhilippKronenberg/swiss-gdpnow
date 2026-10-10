@@ -19,7 +19,7 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
-## 2026-09-04
+## 2026-10-10
 
 - *Presentation.* Sharing the dashboard no longer produces a blank preview
   panel. `twitter:card` asked for `summary_large_image` while no `og:image` or
@@ -30,6 +30,44 @@ published.
   would let the large card be honest instead, but that is a separate decision:
   a chart render goes stale on every data update and nothing here builds
   anything, so it was left for someone to commit to deliberately (#22).
+
+- *Presentation.* The page now says something when JavaScript is off. Every
+  visible number is drawn at run time from the CSV, so a reader with JavaScript
+  disabled or blocked got a header, a row of controls that did nothing, and
+  blank space — with no indication that anything was wrong. A `<noscript>`
+  banner explains it and links straight to `wai_data.csv`, which is a published
+  file and needs no JavaScript to read. The controls, the empty stat tiles and
+  the empty chart are hidden in that state rather than left inert (#23).
+
+- *Presentation.* The chart has a text alternative. The `<canvas>` was empty:
+  no fallback content, no role and no label, so for anyone not looking at it the
+  figure was simply absent — and axe never flagged it, because an empty canvas
+  with no role could equally well be decorative. It now carries `role="img"` and
+  a label rewritten on every render, naming the series actually plotted, the
+  span covered and the latest reading. The page always had a genuine
+  alternative in the Data table, but it is off by default and nothing connected
+  the two; both the label and the canvas fallback now point at it (#23).
+
+- The `a11y` job now gates merges. It was advisory while the page carried a
+  backlog of accessibility violations; that backlog is empty in all three
+  palettes, so a red run now means a change broke something. It stays a
+  separate job from `check`, so the two kinds of failure are told apart at a
+  glance (#21).
+
+- The advisory `a11y` job now audits all three palettes instead of one. It ran
+  in a headless browser at its default settings, which is to say the light
+  `:root` and nothing else — and both contrast bugs the page has produced lived
+  in a dark block, so **CI was green through both of them**. There are three
+  passes now: `light`, `dark-toggle`, which presses the theme button, and
+  `dark-media`, which emulates a dark operating system. The two dark passes are
+  not redundant. The worse of the two bugs existed only in
+  `:root[data-theme="dark"]`, so a run that reached dark through the media
+  query alone would still have reported a clean page. Replayed against both
+  bugs, the new passes report them at the ratios they were measured at by hand
+  — 2.74:1 and 2.49:1 — while the light pass stays green, which is exactly the
+  history. Nothing was installed to do it: `@axe-core/cli` has no way to set a
+  theme before it audits, so the job drives the runner's own chromedriver over
+  HTTP from a Node script using built-ins only (#20).
 
 ## 2026-08-27
 
