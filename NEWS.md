@@ -19,8 +19,13 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
-## 2026-09-03
+## 2026-10-10
 
+- The `a11y` job now gates merges. It was advisory while the page carried a
+  backlog of accessibility violations; that backlog is empty in all three
+  palettes, so a red run now means a change broke something. It stays a
+  separate job from `check`, so the two kinds of failure are told apart at a
+  glance (#21).
 - The advisory `a11y` job now audits all three palettes instead of one. It ran
   in a headless browser at its default settings, which is to say the light
   `:root` and nothing else — and both contrast bugs the page has produced lived

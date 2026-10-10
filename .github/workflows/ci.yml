@@ -89,12 +89,12 @@ jobs:
             index.html README.md
           fail: true
 
-  # Also advisory, and for a different reason than links: this one reports on
-  # the page as it stands rather than on the change under review, so on the day
-  # it was added it was already red. Gating merges on it would mean every
-  # unrelated PR carries the cost of whatever the page has always done. Promote
-  # it to a gate once the backlog it reports is empty -- moving this job into
-  # `check` is then a two-line change.
+  # A merge gate, but kept as its own job rather than folded into `check`, so an
+  # accessibility failure and a malformed CSV do not look alike in the checks
+  # list. It was advisory while the page carried a backlog of violations, since
+  # it grades the page as it stands rather than the change under review; that
+  # backlog is empty in all three palettes, so a red run now means something new
+  # broke (#21).
   #
   # Nothing is installed into the repository. axe-core is fetched from the
   # registry at run time the way html-validate is, Chrome and chromedriver are
@@ -102,7 +102,6 @@ jobs:
   a11y:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v6
 
@@ -128,8 +127,9 @@ jobs:
 
       # Fetched at run time into /tmp, never into the repository -- the same
       # bargain html-validate gets from npx. Pinned to the major: the driver
-      # only uses axe.run(), and the rule set inside is free to move since
-      # nothing here gates on the result.
+      # only uses axe.run(). The rule set inside is free to move, so a new rule
+      # in a minor release can turn an unrelated PR red. That is accepted: it is
+      # a real finding about the page, not noise.
       - name: Fetch axe-core
         run: |
           npm pack axe-core@4 --pack-destination /tmp --silent
@@ -150,8 +150,8 @@ jobs:
       # neither a data failure nor a theme switch that breaks the page can
       # masquerade as a clean audit.
       #
-      # Exit 1 means violations, which is the point -- continue-on-error keeps
-      # that from blocking anyone. Exit 2 means the audit never ran at all.
+      # Exit 1 means violations; exit 2 means the audit never ran at all. Both
+      # fail the job.
       - name: Audit accessibility in every palette
         run: |
           node .github/scripts/a11y-audit.mjs \
