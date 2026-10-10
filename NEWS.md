@@ -21,6 +21,11 @@ published.
 
 ## 2026-10-10
 
+- An `@claude` mention in an issue or pull request comment now gets an answer
+  from Claude Code, authenticated against the subscription rather than metered
+  API credit. mfbdfm's automatic PR review workflow was deliberately not
+  brought across (#2).
+
 - *Presentation.* Sharing the dashboard no longer produces a blank preview
   panel. `twitter:card` asked for `summary_large_image` while no `og:image` or
   `twitter:image` was ever declared, so platforms honouring the tag laid out a
