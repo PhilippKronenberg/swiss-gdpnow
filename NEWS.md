@@ -22,9 +22,11 @@ published.
 ## 2026-10-10
 
 - An `@claude` mention in an issue or pull request comment now gets an answer
-  from Claude Code, authenticated against the subscription rather than metered
-  API credit. mfbdfm's automatic PR review workflow was deliberately not
-  brought across (#2).
+  from Claude Code, and a Claude review of any pull request can be started by
+  hand from the Actions tab. Both are taken from mfbdfm and authenticate
+  against the subscription rather than metered API credit. The review is
+  manual-only to conserve quota, and takes the PR number as an input — mfbdfm's
+  copy reads it from an event that a manual run does not have (#2).
 
 - *Presentation.* Sharing the dashboard no longer produces a blank preview
   panel. `twitter:card` asked for `summary_large_image` while no `og:image` or
