@@ -253,6 +253,13 @@ section.notes p { margin-bottom: 12px; }
 section.notes a { color: var(--link); }
 footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.88rem; color: var(--text-muted); }
 </style>
+<!-- With JavaScript off, everything the script would fill or drive is either
+     empty or inert: the "Loading…" line never resolves, the tiles and chart stay
+     blank, and every button does nothing. Hide all of it, so the page is the
+     header, the <noscript> banner with the CSV link, the notes and the footer. -->
+<noscript><style>
+#asof, #theme-btn, #stats, .controls, .chart-card, .actions { display: none; }
+</style></noscript>
 </head>
 <body>
 <header>
@@ -285,8 +292,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <div class="banner banner-warn">
     <strong>This dashboard needs JavaScript.</strong> The readings, the chart and
     the data table are drawn in your browser from a single CSV file, so with
-    JavaScript disabled or blocked the rest of this page stays empty and its
-    controls do nothing. The data itself does not need JavaScript:
+    JavaScript disabled or blocked they cannot be shown. The data itself does
+    not need JavaScript:
     <a href="wai_data.csv">download wai_data.csv</a> — the full weekly series,
     <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
   </div>
