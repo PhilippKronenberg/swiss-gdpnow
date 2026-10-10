@@ -21,6 +21,16 @@ published.
 
 ## 2026-10-10
 
+- *Presentation.* Sharing the dashboard no longer produces a blank preview
+  panel. `twitter:card` asked for `summary_large_image` while no `og:image` or
+  `twitter:image` was ever declared, so platforms honouring the tag laid out a
+  card around a picture that did not exist — worse than declaring nothing,
+  because the title and description were squeezed into the space left over. It
+  is now `summary`, which is what the tags actually support. A preview image
+  would let the large card be honest instead, but that is a separate decision:
+  a chart render goes stale on every data update and nothing here builds
+  anything, so it was left for someone to commit to deliberately (#22).
+
 - *Presentation.* The page now says something when JavaScript is off. Every
   visible number is drawn at run time from the CSV, so a reader with JavaScript
   disabled or blocked got a header, a row of controls that did nothing, and
