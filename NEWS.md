@@ -19,6 +19,18 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
+## 2026-10-12
+
+- Nothing told anyone when the numbers stopped moving. The realistic failure of
+  the update pipeline is not a crash but a quiet death, after which the page
+  keeps serving stale figures that look entirely correct — visible to a reader
+  in the "Data as of …" line, invisible to everyone else. CI now runs weekly and
+  fails when `vintage_date` falls further behind than `STALE_AFTER_DAYS`, and a
+  failed scheduled run mails the repository owner. The threshold is 365 days for
+  now, because the upstream input is a deliberately frozen snapshot and a tight
+  limit would be red from the day it landed; it wants tightening to a few weeks
+  once new vintages actually arrive (#24).
+
 ## 2026-10-10
 
 - An `@claude` mention in an issue or pull request comment now gets an answer

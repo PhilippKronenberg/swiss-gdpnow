@@ -16,9 +16,22 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # Added for the `freshness` job below, which runs on nothing else: it watches
+  # a quantity that moves at most once a week, so weekly is plenty. The other
+  # jobs come along for the ride, which is no loss -- `check` fetches
+  # html-validate at run time, so a weekly run is also a canary on that.
+  # Scheduled runs always use the default branch. Note that GitHub disables
+  # schedules in a repository with no activity for 60 days: if the alarm ever
+  # goes quiet, check first that it has not simply been switched off.
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays, 06:00 UTC
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # The event is part of the group so that a push to main cannot cancel a
+  # scheduled run in flight: both carry ref refs/heads/main, and a cancelled
+  # run is green, so the staleness alarm would be silently swallowed by
+  # ordinary activity -- the exact failure it exists to catch.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -60,6 +73,33 @@ jobs:
       # malformed input rather than passing everything.
       - name: Validate HTML
         run: npx --yes html-validate index.html
+
+  # The alarm for a pipeline that has quietly stopped. A dead pipeline emits
+  # nothing at all, and the page goes on serving stale numbers that look
+  # entirely correct; this inverts that, producing a signal precisely when
+  # nothing is happening. A failed scheduled run on the default branch emails
+  # the repository owner, so the notification needs nothing configured -- which
+  # is also why this job must not be `continue-on-error`, as that would leave
+  # the run green and send no mail.
+  #
+  # Scheduled and manual only. It is not in `check` because it fails on the
+  # calendar rather than on the diff, and a gate that fails a correct pull
+  # request for a reason its author cannot fix is a gate people learn to
+  # override. The threshold, which is the entire design here, lives next to the
+  # check in tools/validate-data.mjs.
+  freshness:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the published vintage has not gone stale
+        run: node tools/validate-data.mjs --check-staleness
 
   # Advisory, deliberately not a merge gate. External link checking depends on
   # other people's servers being reachable and willing, which makes it exactly
