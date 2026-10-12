@@ -89,20 +89,19 @@ jobs:
             index.html README.md
           fail: true
 
-  # Also advisory, and for a different reason than links: this one reports on
-  # the page as it stands rather than on the change under review, so on the day
-  # it was added it was already red. Gating merges on it would mean every
-  # unrelated PR carries the cost of whatever the page has always done. Promote
-  # it to a gate once the backlog it reports is empty -- moving this job into
-  # `check` is then a two-line change.
+  # A merge gate, but kept as its own job rather than folded into `check`, so an
+  # accessibility failure and a malformed CSV do not look alike in the checks
+  # list. It was advisory while the page carried a backlog of violations, since
+  # it grades the page as it stands rather than the change under review; that
+  # backlog is empty in all three palettes, so a red run now means something new
+  # broke (#21).
   #
-  # Nothing is installed into the repository. axe is fetched by npx the way
-  # html-validate is, Chrome and chromedriver are preinstalled on the runner,
-  # and the server is Python's stdlib one.
+  # Nothing is installed into the repository. axe-core is fetched from the
+  # registry at run time the way html-validate is, Chrome and chromedriver are
+  # preinstalled on the runner, and the server is Python's stdlib one.
   a11y:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v6
 
@@ -126,52 +125,43 @@ jobs:
           echo "::error::local server never answered on 127.0.0.1:8787"
           exit 1
 
-      # The failure this guards against is silent: if the data never arrives,
-      # axe still runs, still reports, and still looks like a real audit of a
-      # page that mostly is not there. So assert on the parts of the DOM that
-      # only exist once the CSV has been fetched and drawn -- the stat tiles are
-      # built by renderStats(), and the canvas only carries width/height
-      # attributes once Chart.js has sized it.
-      - name: Confirm the dashboard rendered
+      # Fetched at run time into /tmp, never into the repository -- the same
+      # bargain html-validate gets from npx. Pinned to the major: the driver
+      # only uses axe.run(). The rule set inside is free to move, so a new rule
+      # in a minor release can turn an unrelated PR red. That is accepted: it is
+      # a real finding about the page, not noise.
+      - name: Fetch axe-core
         run: |
-          google-chrome --headless --no-sandbox --disable-gpu \
-            --virtual-time-budget=8000 --dump-dom \
-            http://127.0.0.1:8787/ >/tmp/dumped.html 2>/dev/null
-          # renderStats() builds the tiles from a string literal that contains
-          # the tile markup, and --dump-dom serialises the inline script along
-          # with everything else. Grep the raw dump and the source counts as a
-          # rendered tile even when nothing rendered at all.
-          perl -0777 -pe 's{<script\b.*?</script>}{}gsi' \
-            /tmp/dumped.html >/tmp/rendered.html
-          tiles=$(grep -o 'class="stat-value"' /tmp/rendered.html | wc -l)
-          echo "stat tiles rendered: $tiles"
-          grep -o '<canvas id="chart"[^>]*>' /tmp/rendered.html || true
-          [ "$tiles" -ge 1 ] \
-            || { echo "::error::no stat tiles -- the data never loaded"; exit 1; }
-          grep -q '<canvas id="chart" width=' /tmp/rendered.html \
-            || { echo "::error::chart canvas was never sized by Chart.js"; exit 1; }
-          grep -q 'class="controls"' /tmp/rendered.html \
-            || { echo "::error::controls missing from the rendered page"; exit 1; }
-          grep -q 'id="error-banner" hidden' /tmp/rendered.html \
-            || { echo "::error::the page is showing its error banner"; exit 1; }
+          npm pack axe-core@4 --pack-destination /tmp --silent
+          tar -xzf /tmp/axe-core-*.tgz -C /tmp
+          test -f /tmp/package/axe.min.js
 
-      # Pinned to the major because the flags below are a CLI contract; the rule
-      # set inside it is free to move, since nothing here gates on the result.
-      # --exit makes this step red when there are violations, which is the point
-      # -- continue-on-error keeps that from blocking anyone.
-      - name: Audit accessibility
+      # Three passes, because the page has three palettes and a browser is only
+      # ever in one of them. Light, dark reached by pressing the theme button,
+      # and dark reached by emulating a dark system. Both contrast bugs this
+      # repository has produced lived in a dark block and the single light pass
+      # this replaces was green through both; #11 lived only in the toggle
+      # block, so the button has to actually be pressed.
+      #
+      # The script drives the preinstalled chromedriver over plain HTTP with
+      # fetch -- Node built-ins only, nothing installed. It re-runs the "did the
+      # dashboard actually render" guard in front of every pass and again after
+      # each theme switch, in the same browser session it then audits, so
+      # neither a data failure nor a theme switch that breaks the page can
+      # masquerade as a clean audit.
+      #
+      # Exit 1 means violations; exit 2 means the audit never ran at all. Both
+      # fail the job.
+      - name: Audit accessibility in every palette
         run: |
-          driver="${CHROMEWEBDRIVER:+$CHROMEWEBDRIVER/chromedriver}"
-          [ -x "$driver" ] || driver="$(command -v chromedriver)"
-          npx --yes @axe-core/cli@4 http://127.0.0.1:8787/ \
-            --chromedriver-path "$driver" \
-            --chrome-options="headless,no-sandbox,disable-gpu,disable-dev-shm-usage" \
-            --load-delay 2000 \
-            --dir /tmp --save axe-results.json \
-            --exit
+          node .github/scripts/a11y-audit.mjs \
+            http://127.0.0.1:8787/ \
+            /tmp/package/axe.min.js \
+            /tmp/axe-results.json
 
-      # The CLI already prints its findings, but they scroll past in a log
-      # nobody opens. Restate them on the run summary page instead.
+      # The audit already prints its findings, but they scroll past in a log
+      # nobody opens. Restate them on the run summary page instead, one section
+      # per palette.
       - name: Summarise findings
         if: always()
         run: |
