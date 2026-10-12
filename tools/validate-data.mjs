@@ -8,8 +8,14 @@
 // here uses Node built-ins only.
 //
 // Run from the repository root:  node tools/validate-data.mjs
+//
+// With --check-staleness it additionally asserts that the published vintage is
+// not too old. That check is opt-in because it depends on today's date rather
+// than on the contents of the repository; see the staleness section below.
 
 import { readFileSync, existsSync } from "node:fs";
+
+const checkStaleness = process.argv.includes("--check-staleness");
 
 const failures = [];
 const notes = [];
@@ -219,6 +225,54 @@ if (existsSync("index.html")) {
     if (ref.startsWith("//") || ref.startsWith("data:")) continue;
     if (!existsSync(ref)) {
       fail(`index.html references "${ref}", which does not exist in the repository.`);
+    }
+  }
+}
+
+// ------------------------------------------------ staleness of the published
+//                                                    vintage  (--check-staleness)
+//
+// The realistic failure of the update pipeline is not a crash but the pipeline
+// being quietly dead for weeks while the page serves stale numbers that look
+// entirely fine. A reader can see it -- the page renders "Data as of ..." from
+// vintage_date -- but nothing tells the maintainer without someone looking.
+// This is the thing that tells them: run on a schedule from CI, a failed run on
+// the default branch emails the repository owner, and no signal at all is the
+// failure mode being replaced.
+//
+// Opt-in, and NOT part of the merge gate. Every other check here fails only
+// when something in the repository is wrong; this one fails because a date
+// passed. As a gate it would eventually block correct pull requests for a
+// reason their authors cannot fix in the diff, which is how a gate teaches
+// people to route around it.
+//
+// THE THRESHOLD IS THE WHOLE DESIGN, and today it is deliberately loose. The
+// upstream input is a fixed snapshot ending 2026-04-07, so the vintage is
+// frozen on purpose and will not move until the pipeline is unparked (#17). A
+// threshold set to the cadence vintages are *expected* to arrive at would
+// therefore be red from the day it landed -- noise from the start, and a
+// permanently red scheduled job is one nobody reads. 365 days keeps the
+// mechanism in place and silent through the freeze, while still being short
+// enough that a year of no data is not allowed to pass unremarked.
+//
+// TIGHTEN THIS the day the pipeline resumes: the data is weekly, so a few weeks
+// is the honest number once vintages are actually arriving.
+const STALE_AFTER_DAYS = 365;
+
+if (checkStaleness) {
+  const v = meta.vintage_date;
+  if (typeof v !== "string" || !DATE_RE.test(v) || Number.isNaN(Date.parse(v))) {
+    fail(`--check-staleness: vintage_date "${v}" is not a YYYY-MM-DD date, so how old `
+      + `the published data is cannot be determined.`);
+  } else {
+    const ageDays = Math.floor((Date.now() - Date.parse(`${v}T00:00:00Z`)) / 86_400_000);
+    if (ageDays > STALE_AFTER_DAYS) {
+      fail(`the published vintage is ${ageDays} days old (vintage_date ${v}), past the `
+        + `${STALE_AFTER_DAYS}-day limit. Either the update pipeline has stopped and nobody `
+        + `noticed, or the freeze is still intentional and STALE_AFTER_DAYS in `
+        + `tools/validate-data.mjs is the thing that needs revisiting.`);
+    } else {
+      note(`vintage_date ${v} is ${ageDays} days old; the limit is ${STALE_AFTER_DAYS} days.`);
     }
   }
 }
