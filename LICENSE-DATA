@@ -21,6 +21,15 @@ Suggested attribution:
   162:10, https://doi.org/10.1186/s41937-026-00157-w
 
 SCOPE. This license covers only the derived, aggregate model output published
-here. It does NOT extend to the underlying source series used to estimate the
-index, which are licensed from third parties, are not contained in this
-repository, and are not redistributable under these terms.
+here -- wai_data.csv and wai_meta.json. It does NOT extend to the underlying
+source series used to estimate the index, which are licensed from third
+parties and are not redistributable under these terms.
+
+Two directories hold third-party source data under the publisher's own terms
+and are therefore EXCLUDED from this license:
+
+  snb/          Swiss National Bank data-portal cubes. Non-commercial use
+                only, with attribution to the SNB. See snb/README.md.
+  seco_amstat/  SECO monthly labour-market figures from arbeit.swiss.
+                Reproduction requires the rights holders' prior written
+                consent. See seco_amstat/README.md.
