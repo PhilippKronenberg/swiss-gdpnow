@@ -43,6 +43,25 @@
   --series-gdp:     #eb6834;
   --series-waiq:    #1baf7a;
   --accent-soft:    #eaf1fc;
+  /* Contribution colours, one per component of the decomposition. They are a
+     categorical set -- nothing is ordered or ranked here -- so they are chosen
+     to stay apart from one another rather than to form a ramp, and GDP keeps
+     the --series-gdp hue it already has on the chart above. The three special
+     components are deliberately desaturated: --comp-trend and --comp-uncert
+     are not data groups competing for attention, and --comp-other is the
+     fallback for a group added upstream before a token exists for it.
+     Like every colour here these have to be written into all three palette
+     blocks; see the dark ones below. */
+  --comp-survey:    #0a6fb0;
+  --comp-alt:       #d98500;
+  --comp-fin:       #00916c;
+  --comp-trade:     #58a9df;
+  --comp-prices:    #b25f94;
+  --comp-retail:    #7d5ba6;
+  --comp-gdp:       #eb6834;
+  --comp-uncert:    #8b8894;
+  --comp-trend:     #a8a69e;
+  --comp-other:     #6d6c65;
   /* Links are their own token rather than reusing --series-wai. The chart's
      blue is a graphical object, which AA holds to 3:1 and it passes; the same
      blue as body text measures 4.08:1 and fails. Darkening the shared token
@@ -83,6 +102,21 @@
     --series-gdp:     #d95926;
     --series-waiq:    #199e70;
     --accent-soft:    #17263a;
+    /* Contribution colours, lifted for a #1a1a19 card: the light set's
+       #0a6fb0 and #00916c are darker than the surface they would sit on, so
+       the bars would read as holes. --comp-trend inverts direction instead of
+       lifting -- it has to stay the most recessive thing in the stack, which
+       on a dark card means darker than the data groups, not paler. */
+    --comp-survey:    #4a9ede;
+    --comp-alt:       #d9a02a;
+    --comp-fin:       #1ea47d;
+    --comp-trade:     #86c6ee;
+    --comp-prices:    #cf85b0;
+    --comp-retail:    #9d84c9;
+    --comp-gdp:       #d95926;
+    --comp-uncert:    #9b98a4;
+    --comp-trend:     #6e6c65;
+    --comp-other:     #93928a;
     /* Dark's own value, not light's: #2269c4 measures 3.47:1 on a #121211
        page. This one is 5.15:1. */
     --link:           #3987e5;
@@ -125,6 +159,17 @@
   --series-waiq:    #199e70;
   --accent-soft:    #17263a;
   --link:           #3987e5;
+  /* Same values as the media block -- see the comment there. */
+  --comp-survey:    #4a9ede;
+  --comp-alt:       #d9a02a;
+  --comp-fin:       #1ea47d;
+  --comp-trade:     #86c6ee;
+  --comp-prices:    #cf85b0;
+  --comp-retail:    #9d84c9;
+  --comp-gdp:       #d95926;
+  --comp-uncert:    #9b98a4;
+  --comp-trend:     #6e6c65;
+  --comp-other:     #93928a;
   /* These six were missing from this block, so the toggle-driven dark theme
      fell back to the light :root for them and painted --brand #276873 onto a
      #1a1a19 tile -- 2.74:1. A reader on a light system who chose dark got the
@@ -224,6 +269,9 @@ label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
 .swatch { width: 14px; height: 3px; border-radius: 2px; flex: none; }
 .swatch.dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface-1); }
 .swatch.band { height: 12px; width: 14px; border-radius: 3px; }
+/* A stacked bar reads as an area, not a line, so its key is a block. Separate
+   from .band only so the two can diverge without one renaming the other. */
+.swatch.box { height: 12px; width: 12px; border-radius: 3px; }
 
 .chart-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px 8px; }
 .chart-box { position: relative; height: 420px; }
@@ -246,6 +294,19 @@ th { color: var(--brand); font-weight: 600; font-size: 0.82rem; text-transform: 
    direction in dark mode, where the label is near-black. */
 .btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
 
+/* The drivers panel reuses the main chart's furniture -- .controls, .chart-card,
+   .legend, .tablewrap, .actions -- rather than defining a parallel set of its
+   own, so the two figures cannot drift apart visually. Only the heading, the
+   standfirst and the space above them are new. The [hidden] guard matches the
+   one on .banner and .tablewrap: the panel is hidden until its data arrives,
+   and hidden for good if it never does. */
+section.drivers { margin-top: 40px; }
+section.drivers[hidden] { display: none; }
+section.drivers h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 8px; font-weight: 650; }
+section.drivers p.lede { font-size: 1rem; color: var(--text-secondary); margin-bottom: 14px; }
+section.drivers .legend { gap: 10px 16px; font-size: 0.9rem; }
+.caption { font-size: 0.85rem; color: var(--text-muted); margin-top: 10px; }
+
 /* No max-width cap on the prose: the text runs the full width of the page. */
 section.notes { margin-top: 36px; font-size: 1rem; color: var(--text-secondary); }
 section.notes h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 8px; font-weight: 650; }
@@ -258,7 +319,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
      blank, and every button does nothing. Hide all of it, so the page is the
      header, the <noscript> banner with the CSV link, the notes and the footer. -->
 <noscript><style>
-#asof, #theme-btn, #stats, .controls, .chart-card, .actions { display: none; }
+#asof, #theme-btn, #stats, .controls, .chart-card, .actions, #drivers { display: none; }
 </style></noscript>
 </head>
 <body>
@@ -290,11 +351,13 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
      published file in this repository and needs no JavaScript to read. -->
 <noscript>
   <div class="banner banner-warn">
-    <strong>This dashboard needs JavaScript.</strong> The readings, the chart and
-    the data table are drawn in your browser from a single CSV file, so with
-    JavaScript disabled or blocked they cannot be shown. The data itself does
-    not need JavaScript:
-    <a href="wai_data.csv">download wai_data.csv</a> — the full weekly series,
+    <strong>This dashboard needs JavaScript.</strong> The readings, the charts and
+    the data tables are drawn in your browser from CSV files published next to
+    this page, so with JavaScript disabled or blocked they cannot be shown. The
+    data itself does not need JavaScript:
+    <a href="wai_data.csv">wai_data.csv</a> is the full weekly series and
+    <a href="wai_contributions.csv">wai_contributions.csv</a> is the weekly
+    breakdown of what drives it, both
     <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
   </div>
 </noscript>
@@ -358,10 +421,63 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <button class="btn" id="dl-full" type="button">Download full data (CSV)</button>
 </div>
 
+<!-- Hidden until the contributions data has actually loaded, and left hidden if
+     it never does. The files behind this panel are additive: a checkout of this
+     repository without them is valid, and upstream can publish a vintage
+     without them, so a 404 here is a missing panel rather than a broken page.
+     It must NOT raise #error-banner, which says the dashboard failed to load. -->
+<section class="drivers" id="drivers" aria-labelledby="drivers-title" hidden>
+  <h2 id="drivers-title">What drives the index</h2>
+  <p class="lede">The same weekly growth rate as above, split into the groups of
+  indicators it comes from. Each week's bars add up to that week's WAI, so the
+  stack <em>is</em> the line drawn over it. Bars above zero pushed growth up that
+  week, bars below zero held it down.</p>
+
+  <section class="controls" aria-label="Contributions chart controls">
+    <div class="ctl-group">
+      <span class="ctl-label" id="lbl-crange">Range</span>
+      <div class="seg" role="group" aria-labelledby="lbl-crange" id="contrib-range-seg">
+        <button type="button" data-years="2" aria-pressed="false">2y</button>
+        <button type="button" data-years="5" aria-pressed="false">5y</button>
+        <button type="button" data-since="2015" aria-pressed="false">2015</button>
+        <button type="button" data-since="2020" aria-pressed="true">2020</button>
+        <button type="button" data-years="0" aria-pressed="false">Full</button>
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" id="show-contrib-table"> Contributions table</label>
+  </section>
+
+  <section class="chart-card" aria-label="Contributions to the Weekly Activity Index">
+    <!-- Same arrangement as the main chart: role="img" with a label that
+         describeContrib() rewrites on every render, and canvas fallback text
+         carrying no focusable element. -->
+    <div class="chart-box"><canvas id="contrib-chart" role="img"
+         aria-label="Stacked bar chart of what contributes to the Weekly Activity Index. It is still loading; the same numbers are available from the Contributions table checkbox above.">
+      <p>Your browser cannot display this chart. The same decomposition is
+      available as text: tick the <strong>Contributions table</strong> checkbox
+      above, or download the CSV below.</p>
+    </canvas></div>
+    <div class="legend" id="contrib-legend"></div>
+  </section>
+
+  <p class="caption" id="contrib-caption"></p>
+
+  <div class="tablewrap" id="contrib-tablewrap" hidden>
+    <table id="contrib-table"><thead></thead><tbody></tbody></table>
+    <p class="stat-note" id="contrib-table-note"></p>
+  </div>
+
+  <div class="actions">
+    <a class="btn" href="wai_contributions.csv" download>Download contributions (CSV)</a>
+  </div>
+</section>
+
 <section class="notes" aria-labelledby="notes-title">
   <h2 id="notes-title">About the index</h2>
   <p>The WAI extracts a single dynamic factor from weekly, monthly and quarterly Swiss indicators. Missing and mixed-frequency observations are handled by data augmentation, the state equation carries stochastic volatility so crisis periods are not smoothed away, and the factor's loading on GDP is fixed at one — which is what makes the index interpretable as a GDP growth rate rather than an abstract index.</p>
   <p><strong>Why two WAI lines on the growth charts.</strong> The blue line is the weekly index: an instantaneous annualised growth rate, read every week. Quarterly GDP is a <em>flow</em> &mdash; the average level of activity across the whole quarter &mdash; so the like-for-like comparison is the green series, the weekly index averaged over each quarter. The difference is not cosmetic. Across 2020Q2 activity collapsed and largely recovered inside the quarter, so the weekly rate ends the quarter near zero while the quarterly average is about &minus;23% annualised, which is what GDP reported. Compared correctly, the WAI matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points across 143 quarters.</p>
+  <p><strong>Reading the contributions panel.</strong> The decomposition is additive and exact: for any week the pieces sum to that week's quarter-on-quarter growth rate, in percentage points of it. Seven of the pieces are groups of input indicators &mdash; surveys, financial markets, alternative data such as traffic and card payments, prices, retail, trade, and published GDP itself. The other two are not data groups and are shown in grey. <em>Trend</em> is the growth the model implies with every data contribution set to zero, so it is roughly average growth and barely moves: about 1.6 points, week after week. <em>Estimation uncertainty</em> (<code>parameter_uncertainty</code> in the published file) is the gap between the posterior-mean index and this plug-in decomposition; it is small in quiet periods and can be sizeable in volatile ones, and it is shown rather than quietly spread over the other pieces.</p>
+  <p><strong>Why GDP dominates the early years.</strong> The factor is anchored to GDP, and the weekly and monthly indicators only begin to arrive from around 2019. Before that, almost the whole index is the <em>GDP (target)</em> piece, because official GDP is almost the only thing informing it. That is the model working as intended rather than a fault in the chart; the data groups become visible from 2019 and dramatically so through 2020.</p>
   <p>Shaded areas are 95% credible bands from the posterior. They are shown for the growth-rate views only: the level index is a cumulation of the growth rate, and the model does not supply a compounded credible interval for it, so no band is drawn rather than one that would look like a level band without being one.</p>
   <p>Methodology and full empirical results: Kronenberg (2026), <em>Swiss Journal of Economics and Statistics</em>, 162:10, <a href="https://doi.org/10.1186/s41937-026-00157-w">doi:10.1186/s41937-026-00157-w</a>, extending Eckert, Kronenberg, Mikosch &amp; Neuwirth (2025), <em>Journal of Applied Econometrics</em>, 40(3), 270–290, <a href="https://doi.org/10.1002/jae.3104">doi:10.1002/jae.3104</a>.</p>
   <p>The index is produced by the open-source <a href="https://github.com/PhilippKronenberg/mfbdfm">mfbdfm</a> R package (<a href="https://philippkronenberg.github.io/mfbdfm/">documentation</a>). This page reads a single CSV that the package writes; it performs no estimation of its own.</p>
@@ -395,8 +511,34 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
              gdp: "gdp_index", quarterly: null }
   };
 
+  // The components of the contributions decomposition. The LIST of components is
+  // read from wai_measures_meta.json at run time and never hard-coded -- upstream
+  // can add a group -- but each one still needs a colour and a readable label,
+  // and those cannot come from a data file. A component with no entry here falls
+  // back to --comp-other and its raw name, which is visibly provisional rather
+  // than broken; add a token and a row here when that happens.
+  var COMP_STYLE = {
+    "trend":                 { token: "--comp-trend",   label: "Trend (average growth)" },
+    "GDP (target)":          { token: "--comp-gdp",     label: "GDP (target)" },
+    "Survey":                { token: "--comp-survey",  label: "Survey" },
+    "Alternative":           { token: "--comp-alt",     label: "Alternative data" },
+    "Financial":             { token: "--comp-fin",     label: "Financial markets" },
+    "Trade":                 { token: "--comp-trade",   label: "Trade" },
+    "Prices":                { token: "--comp-prices",  label: "Prices" },
+    "Retail":                { token: "--comp-retail",  label: "Retail" },
+    "parameter_uncertainty": { token: "--comp-uncert",  label: "Estimation uncertainty" }
+  };
+  // Stacking order, bottom of the stack first. Trend leads because it is the
+  // near-constant baseline the rest sits on, and estimation uncertainty comes
+  // last so the outermost band of the stack is the one that is not a data group.
+  // Anything unlisted sorts to the end, alphabetically.
+  var COMP_ORDER = ["trend", "GDP (target)", "Survey", "Alternative", "Financial",
+                    "Trade", "Prices", "Retail", "parameter_uncertainty"];
+
   var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true };
+  var cstate = { years: null, since: 2020 };
   var rows = [], meta = null, chart = null;
+  var contribRows = [], measMeta = null, contribChart = null;
 
   function css(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -408,6 +550,14 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     var el = document.getElementById("error-banner");
     el.textContent = msg;
     el.hidden = false;
+  }
+  // Component names and group labels come out of a data file and end up inside
+  // innerHTML, in the hand-built legends and the table headers. Nothing in the
+  // published files needs escaping today; the point is that a name that did
+  // would be text rather than markup.
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
   // --- CSV parsing -------------------------------------------------------
@@ -436,17 +586,22 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     return out;
   }
 
-  function visibleRows() {
-    if (state.since) {
-      var from = Date.UTC(state.since, 0, 1);
-      return rows.filter(function (r) { return r.t >= from; });
+  // Both figures have their own range control but the same two ways of
+  // expressing a range -- a calendar year to start from, or a number of years
+  // back from the last observation -- so the slicing lives here once and takes
+  // whichever state object is asking.
+  function sliceRange(arr, st) {
+    if (!arr.length) return arr;
+    if (st.since) {
+      var from = Date.UTC(st.since, 0, 1);
+      return arr.filter(function (r) { return r.t >= from; });
     }
-    if (!state.years) return rows;
-    var last = rows[rows.length - 1].t;
-    var cut = new Date(last);
-    cut.setUTCFullYear(cut.getUTCFullYear() - state.years);
-    return rows.filter(function (r) { return r.t >= cut.getTime(); });
+    if (!st.years) return arr;
+    var cut = new Date(arr[arr.length - 1].t);
+    cut.setUTCFullYear(cut.getUTCFullYear() - st.years);
+    return arr.filter(function (r) { return r.t >= cut.getTime(); });
   }
+  function visibleRows() { return sliceRange(rows, state); }
 
   // --- crosshair ---------------------------------------------------------
   var crosshair = {
@@ -655,6 +810,270 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     }).join("");
   }
 
+  // --- contributions panel -----------------------------------------------
+  //
+  // wai_contributions.csv is long rather than wide -- date,component,value, one
+  // row per week per component -- so it needs its own parse: parseCSV() above
+  // coerces every non-date field with Number(), which would turn the component
+  // name into NaN. Pivoting it here also lets the running total be accumulated
+  // once, which is the number the panel's whole claim rests on.
+  function parseContrib(text) {
+    var lines = text.trim().split(/\r?\n/);
+    var head = lines[0].split(",");
+    if (head.join(",") !== "date,component,value") {
+      throw new Error('header is "' + head.join(",") + '", expected "date,component,value"');
+    }
+    var index = {}, out = [];
+    for (var i = 1; i < lines.length; i++) {
+      if (!lines[i]) continue;
+      var parts = lines[i].split(",");
+      if (parts.length !== 3) {
+        throw new Error("row " + (i + 1) + " has " + parts.length + " fields, header has 3");
+      }
+      var row = index[parts[0]];
+      if (!row) {
+        row = index[parts[0]] = {
+          date: parts[0], t: new Date(parts[0] + "T00:00:00Z").getTime(),
+          values: {}, total: 0, wai: null
+        };
+        out.push(row);
+      }
+      var v = parts[2] === "" ? null : Number(parts[2]);
+      row.values[parts[1]] = v;
+      if (v !== null && !isNaN(v)) row.total += v;
+    }
+    return out;
+  }
+
+  // The WAI line overlaid on the stack is wai_qoq out of wai_data.csv, not a
+  // re-sum of the components: drawing the sum would make the identity look true
+  // by construction, where the point is that it holds between two files.
+  function attachWai() {
+    var byDate = {};
+    rows.forEach(function (r) { byDate[r.date] = r.wai_qoq; });
+    contribRows.forEach(function (c) {
+      c.wai = byDate[c.date] === undefined ? null : byDate[c.date];
+    });
+  }
+
+  function compStyle(name) {
+    return COMP_STYLE[name] || { token: "--comp-other", label: name };
+  }
+
+  function contribComponents() {
+    var names = (measMeta && Array.isArray(measMeta.components))
+      ? measMeta.components.slice() : [];
+    if (!names.length) {
+      // No metadata, or a list the page cannot use: fall back to whatever the
+      // CSV itself carries, so the panel degrades to "unordered" and not "empty".
+      var seenComp = {};
+      contribRows.forEach(function (r) {
+        Object.keys(r.values).forEach(function (k) { seenComp[k] = true; });
+      });
+      names = Object.keys(seenComp);
+    }
+    return names.sort(function (a, b) {
+      var ia = COMP_ORDER.indexOf(a), ib = COMP_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a < b ? -1 : a > b ? 1 : 0;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+  }
+
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function monthLabel(iso) {
+    var m = /^(\d{4})-(\d{2})-\d{2}$/.exec(String(iso));
+    return m ? MONTHS[Number(m[2]) - 1] + " " + m[1] : String(iso);
+  }
+
+  function renderContribLegend(comps) {
+    var parts = comps.map(function (n) {
+      var st = compStyle(n);
+      return '<span><i class="swatch box" style="background:' + css(st.token) + '"></i>' +
+             esc(st.label) + "</span>";
+    });
+    parts.push('<span><i class="swatch" style="background:' + css("--text-primary") +
+               '"></i>WAI (what the bars add up to)</span>');
+    document.getElementById("contrib-legend").innerHTML = parts.join("");
+  }
+
+  function describeContrib(data, comps) {
+    var el = document.getElementById("contrib-chart"), parts;
+    if (!data.length) {
+      parts = ["Stacked bar chart of what contributes to the Weekly Activity Index. " +
+               "No weeks fall in the selected range."];
+    } else {
+      var first = data[0], last = data[data.length - 1];
+      var ranked = comps.map(function (n) {
+        return { name: compStyle(n).label, v: last.values[n] || 0 };
+      }).sort(function (a, b) { return Math.abs(b.v) - Math.abs(a.v); });
+      var named = ranked.slice(0, 3).map(function (c) {
+        return c.name + " " + fmt(c.v) + " points";
+      }).join(", ");
+      parts = [
+        "Stacked bar chart splitting the WAI's annualised quarter-on-quarter growth into " +
+        comps.length + " contributions, weekly from " + first.date + " to " + last.date + ".",
+        "Each week's bars sum to the WAI line drawn over them.",
+        "In the week ending " + last.date + " the WAI is " + fmt(last.wai) +
+        "%, of which the largest contributions are " + named +
+        (ranked.length > 3 ? ", with " + (ranked.length - 3) + " smaller ones." : "."),
+        "Every figure is available as text from the Contributions table checkbox above."
+      ];
+    }
+    el.setAttribute("aria-label", parts.join(" "));
+  }
+
+  function renderContribTable(data, comps) {
+    var tail = data.slice(-12);
+    var heads = ["Date"].concat(comps.map(function (n) { return compStyle(n).label; }))
+                        .concat(["Sum", "WAI"]);
+    document.querySelector("#contrib-table thead").innerHTML =
+      "<tr>" + heads.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>";
+    document.querySelector("#contrib-table tbody").innerHTML = tail.map(function (r) {
+      var cells = ["<td>" + esc(r.date) + "</td>"];
+      comps.forEach(function (n) {
+        cells.push("<td>" + fmt(r.values[n]) + "</td>");
+      });
+      cells.push("<td>" + fmt(r.total) + "</td>");
+      cells.push("<td>" + fmt(r.wai) + "</td>");
+      return "<tr>" + cells.join("") + "</tr>";
+    }).join("");
+    document.getElementById("contrib-table-note").textContent =
+      "Last " + tail.length + " of " + data.length + " weeks in the selected range, in " +
+      "percentage points of the WAI's annualised quarter-on-quarter growth. " +
+      "Sum is the contributions added up; WAI is the published figure they decompose. " +
+      "Use the download button for every week and component.";
+  }
+
+  function renderContrib() {
+    var data = sliceRange(contribRows, cstate), comps = contribComponents();
+    var labels = data.map(function (r) { return r.date; });
+    if (contribChart) { contribChart.destroy(); contribChart = null; }
+
+    var sets = comps.map(function (name) {
+      var st = compStyle(name);
+      return {
+        type: "bar", label: st.label, stack: "contrib",
+        data: data.map(function (r) {
+          var v = r.values[name];
+          return v === undefined ? null : v;
+        }),
+        backgroundColor: css(st.token), borderWidth: 0,
+        // Weekly bars with the default gaps read as stripes rather than as the
+        // area they are; full width makes the stack continuous.
+        categoryPercentage: 1, barPercentage: 1, order: 2
+      };
+    });
+    // Near-black rather than --series-wai: the blue is already spoken for by a
+    // component colour, and a dark line is what a reader expects a stacked
+    // chart's total to be.
+    sets.push({
+      type: "line", label: "WAI", stack: "wai",
+      data: data.map(function (r) { return r.wai; }),
+      borderColor: css("--text-primary"), borderWidth: 1.5,
+      pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: css("--text-primary"),
+      tension: 0, fill: false, order: 0
+    });
+
+    contribChart = new Chart(document.getElementById("contrib-chart"), {
+      type: "bar",
+      data: { labels: labels, datasets: sets },
+      plugins: [crosshair],
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        animation: false,
+        scales: {
+          x: { stacked: true, grid: { display: false },
+               border: { color: css("--border") },
+               ticks: { color: css("--text-secondary"), maxRotation: 0, autoSkipPadding: 24,
+                        callback: function (value) {
+                          var lab = (typeof value === "number" && this.getLabelForValue)
+                            ? this.getLabelForValue(value) : value;
+                          return monthLabel(lab);
+                        } } },
+          y: { stacked: true, grid: { color: css("--grid"), drawTicks: false },
+               border: { display: false },
+               ticks: { color: css("--text-secondary"),
+                        callback: function (val) { return val + "%"; } },
+               title: { display: true,
+                        text: "Contribution to WAI, QoQ growth, annualised",
+                        color: css("--text-muted"), font: { size: 11 } } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: css("--surface-1"), titleColor: css("--text-primary"),
+            bodyColor: css("--text-secondary"), footerColor: css("--text-secondary"),
+            borderColor: css("--border"), borderWidth: 1,
+            padding: 10, displayColors: true, cornerRadius: 6,
+            callbacks: {
+              label: function (item) {
+                var y = item.parsed.y;
+                if (y === null || y === undefined) return null;
+                return item.dataset.label + ": " + y.toFixed(2);
+              },
+              // The identity, stated on hover: what the bars add up to, next to
+              // the published figure they are meant to add up to.
+              footer: function (items) {
+                var r = data[items.length ? items[0].dataIndex : -1];
+                if (!r) return "";
+                return "Sum " + fmt(r.total) + " · published WAI " + fmt(r.wai);
+              }
+            }
+          }
+        }
+      }
+    });
+    renderContribLegend(comps);
+    describeContrib(data, comps);
+    renderContribTable(data, comps);
+  }
+
+  // Fetched separately from wai_data.csv and failing separately. The measures
+  // files are additive: a vintage can be published without them, so a 404 here
+  // means "no panel", not "the dashboard is broken". Raising #error-banner would
+  // tell a reader the readings and the chart above had failed, when they have not.
+  function loadDrivers() {
+    var panel = document.getElementById("drivers");
+    fetch("wai_measures_meta.json?v=" + bust)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (m) { measMeta = m; })
+      .catch(function () { measMeta = null; })
+      .then(function () { return fetch("wai_contributions.csv?v=" + bust); })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_contributions.csv");
+        return r.text();
+      })
+      .then(function (text) {
+        contribRows = parseContrib(text);
+        if (!contribRows.length) throw new Error("wai_contributions.csv contains no rows");
+        attachWai();
+
+        var unit = (measMeta && measMeta.contributions_unit) ||
+          "percentage points of wai_qoq (annualised quarter-on-quarter growth, %)";
+        document.getElementById("contrib-caption").textContent =
+          "Contributions are measured in " + unit + ". " +
+          contribRows.length.toLocaleString() + " weeks × " +
+          contribComponents().length + " components" +
+          (measMeta && measMeta.vintage_date ? ", vintage " + measMeta.vintage_date : "") +
+          ". Figures are rounded to four decimals, so a week's bars can miss its " +
+          "WAI by a thousandth of a point.";
+
+        panel.hidden = false;   // before the draw: a hidden canvas has no size
+        renderContrib();
+      })
+      .catch(function (err) {
+        panel.hidden = true;
+        contribRows = [];
+        if (window.console && console.warn) {
+          console.warn("Contributions panel not shown: " + err.message);
+        }
+      });
+  }
+
   function download(name, text) {
     var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
     var url = URL.createObjectURL(blob);
@@ -671,7 +1090,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   }
 
   // --- wiring ------------------------------------------------------------
-  function segHandler(id, apply) {
+  function segHandler(id, apply, draw) {
     document.getElementById(id).addEventListener("click", function (e) {
       var btn = e.target.closest("button");
       if (!btn) return;
@@ -679,13 +1098,24 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         b.setAttribute("aria-pressed", String(b === btn));
       });
       apply(btn);
-      render();
+      (draw || render)();
     });
   }
+  // Both range controls read the same two data attributes, so the state update
+  // is shared; only which state object and which figure it drives differ.
+  function applyRange(st) {
+    return function (btn) {
+      if (btn.dataset.since) { st.since = Number(btn.dataset.since); st.years = null; }
+      else { st.since = null; st.years = Number(btn.dataset.years); }
+    };
+  }
   segHandler("view-seg", function (btn) { state.view = btn.dataset.view; });
-  segHandler("range-seg", function (btn) {
-    if (btn.dataset.since) { state.since = Number(btn.dataset.since); state.years = null; }
-    else { state.since = null; state.years = Number(btn.dataset.years); }
+  segHandler("range-seg", applyRange(state));
+  segHandler("contrib-range-seg", applyRange(cstate), function () {
+    if (contribRows.length) renderContrib();
+  });
+  document.getElementById("show-contrib-table").addEventListener("change", function () {
+    document.getElementById("contrib-tablewrap").hidden = !this.checked;
   });
   document.getElementById("show-band").addEventListener("change", function () { state.band = this.checked; render(); });
   document.getElementById("show-gdp").addEventListener("change", function () { state.gdp = this.checked; render(); });
@@ -704,7 +1134,11 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
              : (matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark");
     document.documentElement.setAttribute("data-theme", next);
     try { localStorage.setItem("wai-theme", next); } catch (e) { /* private mode */ }
+    // Both charts take every colour from a CSS token through css(), which reads
+    // the computed value once at build time, so a theme change has to rebuild
+    // them. A chart left undrawn would keep the other palette's colours.
     render();
+    if (contribRows.length) renderContrib();
   });
   try {
     var saved = localStorage.getItem("wai-theme");
@@ -740,6 +1174,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
 
       renderStats();
       render();
+      loadDrivers();
     })
     .catch(function (err) {
       showError("Could not load the data: " + err.message +
