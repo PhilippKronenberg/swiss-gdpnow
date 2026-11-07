@@ -289,6 +289,7 @@ const MEASURES_META = "wai_measures_meta.json";
 const CONTRIB = "wai_contributions.csv";
 const NEWS = "wai_news.csv";
 const SERIES = "wai_series.csv";
+const CONTRIB_SERIES = "wai_contributions_series.csv";
 
 // r2 is 1 - var(residual)/var(series) for a factor the model did not fit by
 // least squares, so a series the factor explains essentially none of can come
@@ -497,6 +498,37 @@ if (existsSync(SERIES)) {
     });
     note(`${SERIES}: ${s.rows.length} series across `
       + `${new Set(s.rows.map((r) => r[2])).size} groups.`);
+  }
+
+  // The indicator panel: per date and group its rows must add up to that group's
+  // row in wai_contributions.csv. Each value is rounded on its own, so the sum
+  // can miss by half a unit of the last decimal per series.
+  const cs = s && existsSync(CONTRIB_SERIES) ? readFlatCsv(CONTRIB_SERIES, ["date", "series", "value"]) : null;
+  const co = cs && existsSync(CONTRIB) ? readFlatCsv(CONTRIB, ["date", "component", "value"]) : null;
+  if (cs && co) {
+    const groupOf = new Map(s.rows.map((r) => [r[0], r[2]]));
+    const sums = new Map();
+    let unknown = 0;
+    cs.rows.forEach((r, i) => {
+      const [d, id, val] = r;
+      if (!groupOf.has(id)) {
+        if (unknown++ < 5) fail(`${CONTRIB_SERIES} row ${i + 2}: series "${id}" is not in ${SERIES}.`);
+        return;
+      }
+      if (!Number.isFinite(num(val))) fail(`${CONTRIB_SERIES} row ${i + 2}: value "${val}" is not a finite number.`);
+      const key = `${d}|${groupOf.get(id)}`;
+      sums.set(key, (sums.get(key) ?? 0) + num(val));
+    });
+    const tolerance = 0.0001 * s.rows.length;
+    let worst = 0;
+    co.rows.forEach((r) => {
+      const key = `${r[0]}|${r[1]}`;
+      if (sums.has(key)) worst = Math.max(worst, Math.abs(sums.get(key) - num(r[2])));
+    });
+    if (worst > tolerance) {
+      fail(`${CONTRIB_SERIES}: series sum differs from the group in ${CONTRIB} by up to ${worst.toFixed(4)}.`);
+    }
+    note(`${CONTRIB_SERIES}: ${sums.size} date-group sums; worst difference from ${CONTRIB} ${worst.toFixed(4)}.`);
   }
 } else if (mmeta) {
   note(`${MEASURES_META} is present but ${SERIES} is not; the series panel will not render.`);
