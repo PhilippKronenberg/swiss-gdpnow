@@ -21,6 +21,12 @@ published.
 
 ## 2026-11-08
 
+- **Presentation** — The first tile is the nowcast: the current quarter's
+  quarter-on-quarter growth, annualised, the figure that compares with GDP. It
+  used to show the latest week's growth rate under the label "QoQ annualised";
+  that is an instantaneous weekly rate, annualised, which swings from week to
+  week, and is now the second tile, "Latest week, annualised". The numbers did
+  not change.
 - **Presentation** — Both time charts have a date slider (one handle for the
   first week shown, one for the last) and range buttons for 1 month, 3 months,
   6 months and 1 year next to the existing ones. The header shows the latest

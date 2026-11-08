@@ -1023,15 +1023,25 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
     var yearAgoStr = isFinite(yearAgo.getTime()) ? yearAgo.toISOString().slice(0, 10) : null;
 
+    // The headline is the nowcast, the quarter-on-quarter figure that compares
+    // with GDP. The latest week's rate comes second: it is an instantaneous
+    // weekly rate, annualised, and swings from week to week. Outside a running
+    // quarter (its GDP already published) the first tile shows the latest
+    // quarter's WAI instead.
+    var nc = nowcastPoint(VIEWS.qoq);
+    var qrow = null;
+    for (var i = rows.length - 1; i >= 0 && !qrow; i--) if (rows[i].wai_qoq_q !== null) qrow = rows[i];
     var tiles = [
-      { label: "WAI, QoQ annualised", value: fmt(last.wai_qoq) + "%",
+      nc ? { label: "Nowcast " + nc.quarter + ", QoQ annualised", value: fmt(nc.value) + "%",
+             note: "quarter-on-quarter, as GDP is measured; from data to " + last.date }
+         : { label: "WAI, latest quarter, QoQ annualised", value: qrow ? fmt(qrow.wai_qoq_q) + "%" : "–",
+             note: qrow ? "quarter ending " + qrow.date : "" },
+      { label: "Latest week, annualised", value: fmt(last.wai_qoq) + "%",
         note: "week ending " + last.date + ", 95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
       { label: "WAI, year-over-year", value: fmt(last.wai_yoy) + "%",
         note: yearAgoStr ? yearAgoStr + " to " + last.date : "12 months to " + last.date },
       { label: "Level index", value: fmt(last.wai_index, 1),
-        note: "at " + last.date + ", 2019Q4 = 100" },
-      { label: "Latest week", value: last.date,
-        note: first.date + " to " + last.date + ", " + rows.length.toLocaleString() + " weekly observations" }
+        note: "at " + last.date + ", 2019Q4 = 100; weekly from " + first.date }
     ];
     document.getElementById("stats").innerHTML = tiles.map(function (t) {
       return '<div class="stat"><div class="stat-label">' + t.label + '</div>' +
