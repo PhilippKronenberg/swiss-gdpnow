@@ -21,6 +21,11 @@ published.
 
 ## 2026-11-08
 
+- **Presentation** — The main chart marks the nowcast: the current quarter's
+  growth as the model predicts it from the data so far, as a red diamond at the
+  latest week, with its quarter and value in the legend. It is the latest value
+  of the quarterly series (`wai_qoq_q`, or `wai_yoy_q` in the year-over-year
+  view) while that quarter has no published GDP; nothing new is published.
 - **Presentation** — The contributions panel stacks the bars on average growth.
   The model has no constant: every series enters it standardised, so a factor of
   zero means GDP growing at its long-run average, which the published scale adds

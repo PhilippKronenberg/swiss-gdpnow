@@ -42,6 +42,7 @@
   --series-wai-band:rgba(42, 120, 214, 0.16);
   --series-gdp:     #eb6834;
   --series-waiq:    #1baf7a;
+  --series-nowcast: #b3122e;
   --accent-soft:    #eaf1fc;
   /* Contribution colours, one per component of the decomposition. They are a
      categorical set -- nothing is ordered or ranked here -- so they are chosen
@@ -103,6 +104,7 @@
     --series-wai-band:rgba(57, 135, 229, 0.22);
     --series-gdp:     #d95926;
     --series-waiq:    #199e70;
+    --series-nowcast: #e63374;
     --accent-soft:    #17263a;
     /* Contribution colours, lifted for a #1a1a19 card: the light set's
        #0a6fb0 and #00916c are too dark for the surface they would sit on, so
@@ -161,6 +163,7 @@
   --series-wai-band:rgba(57, 135, 229, 0.22);
   --series-gdp:     #d95926;
   --series-waiq:    #199e70;
+  --series-nowcast: #e63374;
   --accent-soft:    #17263a;
   --link:           #3987e5;
   /* Same values as the media block -- see the comment there. */
@@ -276,6 +279,7 @@ label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
 .swatch { width: 14px; height: 3px; border-radius: 2px; flex: none; }
 .swatch.dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface-1); }
+.swatch.diamond { width: 10px; height: 10px; border-radius: 0; transform: rotate(45deg); }
 .swatch.band { height: 12px; width: 14px; border-radius: 3px; }
 /* A stacked bar reads as an area, not a line, so its key is a block. Separate
    from .band only so the two can diverge without one renaming the other. */
@@ -789,7 +793,32 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
                   pointRadius: 4, pointHoverRadius: 6,
                   pointBorderColor: css("--surface-1"), pointBorderWidth: 2, order: 0 });
     }
+
+    // The nowcast: the current quarter's growth as the model predicts it today.
+    // A diamond rather than a dot, larger than the GDP dots and ringed, so it is
+    // told apart from them by shape as well as colour (in dark mode the two hues
+    // are close), and its quarter and value are written in the legend.
+    var nc = nowcastPoint(v);
+    if (nc && data.length && nc.t >= data[0].t && nc.t <= data[data.length - 1].t) {
+      sets.push({ label: "Nowcast " + nc.quarter,
+                  data: [{ x: nc.t, y: nc.value }],
+                  showLine: false, borderColor: css("--surface-1"),
+                  backgroundColor: css("--series-nowcast"), pointStyle: "rectRot",
+                  pointRadius: 8, pointHoverRadius: 10, pointBorderWidth: 2, order: -1 });
+    }
     return sets;
+  }
+
+  // The latest week carries the current quarter's value of the quarterly series
+  // (wai_qoq_q / wai_yoy_q) while that quarter is still running: the nowcast.
+  function nowcastPoint(v) {
+    if (!v.quarterly || !rows.length) return null;
+    var last = rows[rows.length - 1], value = last[v.quarterly];
+    if (value === null || value === undefined || isNaN(value)) return null;
+    if (v.gdp && last[v.gdp] !== null && last[v.gdp] !== undefined) return null;
+    var m = /^(\d{4})-(\d{2})/.exec(last.date);
+    var quarter = m ? m[1] + "Q" + (Math.floor((Number(m[2]) - 1) / 3) + 1) : last.date;
+    return { t: last.t, value: value, quarter: quarter };
   }
 
   function renderLegend() {
@@ -803,6 +832,11 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     }
     if (state.gdp && v.gdp) {
       parts.push('<span><i class="swatch dot" style="background:' + css("--series-gdp") + '"></i>Published GDP</span>');
+    }
+    var nc = nowcastPoint(v);
+    if (nc) {
+      parts.push('<span><i class="swatch diamond" style="background:' + css("--series-nowcast") +
+                 '"></i>Nowcast ' + esc(nc.quarter) + ': ' + fmt(nc.value) + v.unit + '</span>');
     }
     document.getElementById("legend").innerHTML = parts.join("");
   }
@@ -838,6 +872,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       if (state.gdp && v.gdp && data.some(function (r) { return r[v.gdp] !== null; })) {
         also.push("published GDP");
       }
+      var nc = nowcastPoint(v);
+      if (nc) also.push("the nowcast for " + nc.quarter + ", " + fmt(nc.value) + v.unit + ", as a red diamond");
       parts = ["Line chart of " + v.label + ", weekly from " + first.date + " to " + last.date + ".",
                "Latest " + fmt(last[v.mean], d) + v.unit + ", ranging from " + fmt(lo, d) + v.unit +
                " to " + fmt(hi, d) + v.unit + " over that span."];
