@@ -274,6 +274,32 @@ header .icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--on-
 label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; color: var(--text-secondary); cursor: pointer; }
 label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
 
+/* Date-range slider: two range inputs on one track, a handle each for the
+   first and the last week shown. The inputs ignore the pointer except on their
+   thumbs, so either handle can be grabbed where they overlap the track. */
+.range-row { flex: 1 1 100%; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.range-slider { position: relative; flex: 1 1 260px; min-width: 200px; height: 28px; }
+.range-slider::before {
+  content: ""; position: absolute; left: 8px; right: 8px; top: 12px; height: 4px;
+  background: var(--border); border-radius: 2px;
+}
+.range-slider .rs-fill { position: absolute; top: 12px; height: 4px; background: var(--brand); border-radius: 2px; }
+.range-slider input[type=range] {
+  position: absolute; left: 0; top: 0; width: 100%; height: 28px; margin: 0;
+  background: none; pointer-events: none; -webkit-appearance: none; appearance: none;
+}
+.range-slider input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--brand); border: 2px solid var(--surface-1); cursor: pointer;
+}
+.range-slider input[type=range]::-moz-range-thumb {
+  pointer-events: auto; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--brand); border: 2px solid var(--surface-1); cursor: pointer;
+}
+.range-slider input[type=range]::-moz-range-track { background: none; }
+.range-slider input[type=range]:focus-visible { outline: 2px solid var(--series-wai); outline-offset: 2px; }
+.range-label { font-size: 0.9rem; color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
 /* Sits below the chart, not above it -- see the markup. */
 .legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 12px 2px 0; font-size: 0.95rem; color: var(--text-secondary); }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
@@ -391,6 +417,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <div class="ctl-group">
     <span class="ctl-label" id="lbl-range">Range</span>
     <div class="seg" role="group" aria-labelledby="lbl-range" id="range-seg">
+      <button type="button" data-months="1" aria-pressed="false">1m</button>
+      <button type="button" data-months="3" aria-pressed="false">3m</button>
+      <button type="button" data-months="6" aria-pressed="false">6m</button>
+      <button type="button" data-years="1" aria-pressed="false">1y</button>
       <button type="button" data-years="2" aria-pressed="false">2y</button>
       <button type="button" data-years="5" aria-pressed="true">5y</button>
       <button type="button" data-since="2015" aria-pressed="false">2015</button>
@@ -402,6 +432,15 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <label class="check"><input type="checkbox" id="show-gdp" checked> Published GDP</label>
   <label class="check"><input type="checkbox" id="show-waiq" checked> WAI, quarterly</label>
   <label class="check"><input type="checkbox" id="show-table"> Data table</label>
+  <div class="range-row">
+    <span class="ctl-label">Dates</span>
+    <div class="range-slider" id="range-slider">
+      <div class="rs-fill"></div>
+      <input type="range" class="rs-lo" aria-label="First week shown" min="0" max="1" value="0">
+      <input type="range" class="rs-hi" aria-label="Last week shown" min="0" max="1" value="1">
+    </div>
+    <span class="range-label" aria-live="polite"></span>
+  </div>
 </section>
 
 <section class="chart-card" aria-label="Weekly Activity Index chart">
@@ -450,6 +489,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     <div class="ctl-group">
       <span class="ctl-label" id="lbl-crange">Range</span>
       <div class="seg" role="group" aria-labelledby="lbl-crange" id="contrib-range-seg">
+        <button type="button" data-months="1" aria-pressed="false">1m</button>
+        <button type="button" data-months="3" aria-pressed="false">3m</button>
+        <button type="button" data-months="6" aria-pressed="false">6m</button>
+        <button type="button" data-years="1" aria-pressed="false">1y</button>
         <button type="button" data-years="2" aria-pressed="false">2y</button>
         <button type="button" data-years="5" aria-pressed="false">5y</button>
         <button type="button" data-since="2015" aria-pressed="false">2015</button>
@@ -458,6 +501,15 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       </div>
     </div>
     <label class="check"><input type="checkbox" id="show-contrib-table"> Contributions table</label>
+    <div class="range-row">
+      <span class="ctl-label">Dates</span>
+      <div class="range-slider" id="contrib-range-slider">
+        <div class="rs-fill"></div>
+        <input type="range" class="rs-lo" aria-label="First week shown" min="0" max="1" value="0">
+        <input type="range" class="rs-hi" aria-label="Last week shown" min="0" max="1" value="1">
+      </div>
+      <span class="range-label" aria-live="polite"></span>
+    </div>
   </section>
 
   <section class="chart-card" aria-label="Contributions to the Weekly Activity Index">
@@ -729,6 +781,15 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   // whichever state object is asking.
   function sliceRange(arr, st) {
     if (!arr.length) return arr;
+    // A range picked on the slider: first and last week, inclusive.
+    if (st.from !== undefined && st.from !== null) {
+      return arr.filter(function (r) { return r.t >= st.from && r.t <= st.to; });
+    }
+    if (st.months) {
+      var mcut = new Date(arr[arr.length - 1].t);
+      mcut.setUTCMonth(mcut.getUTCMonth() - st.months);
+      return arr.filter(function (r) { return r.t > mcut.getTime(); });
+    }
     if (st.since) {
       var from = Date.UTC(st.since, 0, 1);
       return arr.filter(function (r) { return r.t >= from; });
@@ -1286,6 +1347,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
 
         panel.hidden = false;   // before the draw: a hidden canvas has no size
         renderContrib();
+        syncContribSlider();
       })
       .catch(function (err) {
         panel.hidden = true;
@@ -1798,14 +1860,69 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   // is shared; only which state object and which figure it drives differ.
   function applyRange(st) {
     return function (btn) {
-      if (btn.dataset.since) { st.since = Number(btn.dataset.since); st.years = null; }
-      else { st.since = null; st.years = Number(btn.dataset.years); }
+      st.from = st.to = null; st.since = st.years = st.months = null;
+      if (btn.dataset.since) st.since = Number(btn.dataset.since);
+      else if (btn.dataset.months) st.months = Number(btn.dataset.months);
+      else st.years = Number(btn.dataset.years);
     };
   }
+
+  // The date slider of a chart: one handle for the first week shown, one for
+  // the last. Moving a handle overrides the buttons (none stays pressed); a
+  // button moves the handles to the range it picks.
+  function rangeSlider(id, segId, st, getArr, draw) {
+    var box = document.getElementById(id);
+    var lo = box.querySelector(".rs-lo"), hi = box.querySelector(".rs-hi");
+    var fill = box.querySelector(".rs-fill"), label = box.parentNode.querySelector(".range-label");
+    function paint() {
+      var arr = getArr(), n = arr.length;
+      if (!n) return;
+      var a = Number(lo.value), b = Number(hi.value), max = Math.max(n - 1, 1);
+      fill.style.left = "calc(8px + (100% - 16px) * " + (a / max) + ")";
+      fill.style.width = "calc((100% - 16px) * " + ((b - a) / max) + ")";
+      label.textContent = arr[a].date + " to " + arr[b].date;
+      lo.setAttribute("aria-valuetext", arr[a].date);
+      hi.setAttribute("aria-valuetext", arr[b].date);
+    }
+    function sync() {
+      var arr = getArr(), n = arr.length;
+      if (!n) return;
+      var shown = sliceRange(arr, st);
+      lo.max = hi.max = String(n - 1);
+      lo.value = String(shown.length ? arr.indexOf(shown[0]) : 0);
+      hi.value = String(shown.length ? arr.indexOf(shown[shown.length - 1]) : n - 1);
+      paint();
+    }
+    function moved(which) {
+      var arr = getArr(), a = Number(lo.value), b = Number(hi.value);
+      if (!arr.length) return;
+      // Keep at least two weeks between the handles, pushing the other one.
+      if (b - a < 1) {
+        if (which === lo) { a = Math.min(a, arr.length - 2); b = a + 1; }
+        else { b = Math.max(b, 1); a = b - 1; }
+        lo.value = String(a); hi.value = String(b);
+      }
+      st.since = st.years = st.months = null;
+      st.from = arr[a].t; st.to = arr[b].t;
+      document.getElementById(segId).querySelectorAll("button").forEach(function (x) {
+        x.setAttribute("aria-pressed", "false");
+      });
+      paint();
+      draw();
+    }
+    lo.addEventListener("input", function () { moved(lo); });
+    hi.addEventListener("input", function () { moved(hi); });
+    return sync;
+  }
+  var syncMainSlider = rangeSlider("range-slider", "range-seg", state,
+    function () { return rows; }, function () { render(); });
+  var syncContribSlider = rangeSlider("contrib-range-slider", "contrib-range-seg", cstate,
+    function () { return contribRows; }, function () { if (contribRows.length) renderContrib(); });
+
   segHandler("view-seg", function (btn) { state.view = btn.dataset.view; });
-  segHandler("range-seg", applyRange(state));
+  segHandler("range-seg", applyRange(state), function () { render(); syncMainSlider(); });
   segHandler("contrib-range-seg", applyRange(cstate), function () {
-    if (contribRows.length) renderContrib();
+    if (contribRows.length) { renderContrib(); syncContribSlider(); }
   });
   document.getElementById("show-contrib-table").addEventListener("change", function () {
     document.getElementById("contrib-tablewrap").hidden = !this.checked;
@@ -1879,14 +1996,18 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         b.textContent = meta.sample_note || "This page is showing synthetic sample data, not the Weekly Activity Index.";
         b.hidden = false;
       }
-      var asof = (meta && meta.vintage_date) || rows[rows.length - 1].date;
+      // The latest week in the data, not wai_meta.json's vintage_date: that is
+      // the end of the current week period, the model's evaluation date, and can
+      // lie days ahead of the last observation.
+      var asof = rows[rows.length - 1].date;
       document.getElementById("asof").textContent =
-        "Data as of " + asof + (meta && meta.run_timestamp ? " · last updated " + meta.run_timestamp.slice(0, 10) : "");
+        "Data to " + asof + (meta && meta.run_timestamp ? " · updated " + meta.run_timestamp.slice(0, 10) : "");
       document.getElementById("foot-meta").textContent =
         "Produced by mfbdfm" + (meta && meta.mfbdfm_version ? " " + meta.mfbdfm_version : "");
 
       renderStats();
       render();
+      syncMainSlider();
       // News reads measMeta, which loadDrivers() fetches; series does not need
       // it but is started at the same point so the panels appear in page order.
       loadDrivers().then(function () { loadNews(); loadSeries().then(loadIndicators); });

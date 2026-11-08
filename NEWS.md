@@ -21,6 +21,12 @@ published.
 
 ## 2026-11-08
 
+- **Presentation** — Both time charts have a date slider (one handle for the
+  first week shown, one for the last) and range buttons for 1 month, 3 months,
+  6 months and 1 year next to the existing ones. The header shows the latest
+  week in the data ("Data to …") and the date of the update, instead of the
+  model's evaluation date, which is the end of the current week period and can
+  lie days after the last observation.
 - **Presentation** — The main chart marks the nowcast: the current quarter's
   growth as the model predicts it from the data so far, as a red diamond at the
   latest week, with its quarter and value in the legend. It is the latest value
