@@ -436,10 +436,11 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
      It must NOT raise #error-banner, which says the dashboard failed to load. -->
 <section class="drivers" id="drivers" aria-labelledby="drivers-title" hidden>
   <h2 id="drivers-title">What drives the index</h2>
-  <p class="lede">The same weekly growth rate as above, split into the groups of
-  indicators it comes from. Each week's bars add up to that week's WAI, so the
-  stack <em>is</em> the line drawn over it. Bars above zero pushed growth up that
-  week, bars below zero held it down.</p>
+  <p class="lede">Why growth is above or below its long-run average, split into
+  the groups of indicators it comes from. Each week's bars add up to that week's
+  WAI minus the average, so the stack <em>is</em> the line drawn over it. Bars
+  above zero pushed growth above average that week, bars below zero held it
+  below.</p>
 
   <section class="controls" aria-label="Contributions chart controls">
     <div class="ctl-group">
@@ -601,7 +602,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <h2 id="notes-title">About the index</h2>
   <p>The WAI extracts a single dynamic factor from weekly, monthly and quarterly Swiss indicators. Missing and mixed-frequency observations are handled by data augmentation, the state equation carries stochastic volatility so crisis periods are not smoothed away, and the factor's loading on GDP is fixed at one — which is what makes the index interpretable as a GDP growth rate rather than an abstract index.</p>
   <p><strong>Why two WAI lines on the growth charts.</strong> The blue line is the weekly index: an instantaneous annualised growth rate, read every week. Quarterly GDP is a <em>flow</em> &mdash; the average level of activity across the whole quarter &mdash; so the like-for-like comparison is the green series, the weekly index averaged over each quarter. The difference is not cosmetic. Across 2020Q2 activity collapsed and largely recovered inside the quarter, so the weekly rate ends the quarter near zero while the quarterly average is about &minus;23% annualised, which is what GDP reported. Compared correctly, the WAI matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points across 143 quarters.</p>
-  <p><strong>Reading the contributions panel.</strong> The decomposition is additive and exact: for any week the pieces sum to that week's quarter-on-quarter growth rate, in percentage points of it. Nine of the pieces are economic groups: output and production, consumption, mobility, the labour market, international trade, prices, financial markets, money and interest rates, and published GDP itself. Business surveys and proxies such as electricity and air quality sit in the group they stand in for. The other two are not data groups and are shown in grey. <em>Trend</em> is the growth the model implies with every data contribution set to zero, so it is roughly average growth and barely moves: about 1.6 points, week after week. <em>Unexplained remainder</em> (<code>parameter_uncertainty</code> in the published file) is the gap between the published index and this plug-in decomposition, which is what is left of parameter uncertainty and any numerical noise; it is small in quiet periods and can be sizeable in volatile ones, and it is shown rather than quietly spread over the other pieces.</p>
+  <p><strong>Reading the contributions panel.</strong> The decomposition is additive and exact: for any week the bars sum to that week's quarter-on-quarter growth rate minus its long-run average, in percentage points. The model has no constant: every series enters it standardised, with its mean removed, so a factor of zero means GDP growing at its average rate over the estimation sample. The published scale adds that average back, and the panel measures from it, so the bars explain why growth is above or below average. Nine of the bars are economic groups: output and production, consumption, mobility, the labour market, international trade, prices, financial markets, money and interest rates, and published GDP itself. Business surveys and proxies such as electricity and air quality sit in the group they stand in for. The tenth, in grey, is not a data group. <em>Unexplained remainder</em> (<code>parameter_uncertainty</code> in the published file) is the gap between the published index and this plug-in decomposition, which is what is left of parameter uncertainty and any numerical noise; it is small in quiet periods and can be sizeable in volatile ones, and it is shown rather than quietly spread over the other pieces.</p>
   <p><strong>Why GDP dominates the early years.</strong> The factor is anchored to GDP, and the weekly and monthly indicators only begin to arrive from around 2019. Before that, almost the whole index is the <em>GDP (target)</em> piece, because official GDP is almost the only thing informing it. That is the model working as intended rather than a fault in the chart; the data groups become visible from 2019 and dramatically so through 2020.</p>
   <p><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of this quarter's GDP growth with the data released since the previous one. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs. A quiet week, with few releases that were roughly as expected, moves the nowcast by thousandths of a point &mdash; that is the panel working, not failing.</p>
   <p><strong>Reading the series panel.</strong> <em>R²</em> says how much of an indicator's own week-to-week variation the common factor explains; a low value is normal for a noisy weekly series and does not mean the series is useless, since the model weighs each one by how informative it is. The <em>loading</em> says how strongly, and in which direction, the series moves with the factor, with a 95% credible interval; an interval that excludes zero means the series reliably co-moves with activity. Published GDP is not charted: its loading is fixed at one, which is what anchors the index to GDP, so its R² of one is a definition rather than a result.</p>
@@ -966,13 +967,19 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       if (!row) {
         row = index[parts[0]] = {
           date: parts[0], t: new Date(parts[0] + "T00:00:00Z").getTime(),
-          values: {}, total: 0, wai: null
+          values: {}, total: 0, trend: 0, wai: null, dev: null
         };
         out.push(row);
       }
       var v = parts[2] === "" ? null : Number(parts[2]);
       row.values[parts[1]] = v;
-      if (v !== null && !isNaN(v)) row.total += v;
+      // The chart shows deviations from average growth: the "trend" component
+      // (the WAI with every contribution at zero, i.e. GDP's long-run average
+      // growth, constant) is the baseline, not a bar, and total is the sum of
+      // the bars, the deviation they explain.
+      if (v !== null && !isNaN(v)) {
+        if (parts[1] === "trend") row.trend = v; else row.total += v;
+      }
     }
     return out;
   }
@@ -985,7 +992,14 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     rows.forEach(function (r) { byDate[r.date] = r.wai_qoq; });
     contribRows.forEach(function (c) {
       c.wai = byDate[c.date] === undefined ? null : byDate[c.date];
+      c.dev = c.wai === null ? null : c.wai - c.trend;
     });
+  }
+
+  // The average the chart measures deviations from: the trend component, which
+  // is the same in every week. Read from the latest week.
+  function contribAverage() {
+    return contribRows.length ? contribRows[contribRows.length - 1].trend : 0;
   }
 
   function compStyle(name) {
@@ -1004,6 +1018,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       });
       names = Object.keys(seenComp);
     }
+    // The trend is the baseline the bars deviate from, not a bar.
+    names = names.filter(function (n) { return n !== "trend"; });
     return names.sort(function (a, b) {
       var ia = COMP_ORDER.indexOf(a), ib = COMP_ORDER.indexOf(b);
       if (ia === -1 && ib === -1) return a < b ? -1 : a > b ? 1 : 0;
@@ -1027,7 +1043,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
              esc(st.label) + "</span>";
     });
     parts.push('<span><i class="swatch" style="background:' + css("--text-primary") +
-               '"></i>WAI (what the bars add up to)</span>');
+               '"></i>WAI minus its average of ' + fmt(contribAverage()) +
+               '% (what the bars add up to)</span>');
     document.getElementById("contrib-legend").innerHTML = parts.join("");
   }
 
@@ -1045,11 +1062,12 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         return c.name + " " + fmt(c.v) + " points";
       }).join(", ");
       parts = [
-        "Stacked bar chart splitting the WAI's annualised quarter-on-quarter growth into " +
+        "Stacked bar chart splitting the deviation of the WAI's annualised quarter-on-quarter " +
+        "growth from its long-run average of " + fmt(contribAverage()) + "% into " +
         comps.length + " contributions, weekly from " + first.date + " to " + last.date + ".",
-        "Each week's bars sum to the WAI line drawn over them.",
+        "Each week's bars sum to the line drawn over them, the WAI minus that average.",
         "In the week ending " + last.date + " the WAI is " + fmt(last.wai) +
-        "%, of which the largest contributions are " + named +
+        "%, " + fmtSigned(last.dev, 2) + " points from average, of which the largest contributions are " + named +
         (ranked.length > 3 ? ", with " + (ranked.length - 3) + " smaller ones." : "."),
         "Every figure is available as text from the Contributions table checkbox above."
       ];
@@ -1060,7 +1078,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   function renderContribTable(data, comps) {
     var tail = data.slice(-12);
     var heads = ["Date"].concat(comps.map(function (n) { return compStyle(n).label; }))
-                        .concat(["Sum", "WAI"]);
+                        .concat(["Sum", "WAI minus average", "WAI"]);
     document.querySelector("#contrib-table thead").innerHTML =
       "<tr>" + heads.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>";
     document.querySelector("#contrib-table tbody").innerHTML = tail.map(function (r) {
@@ -1069,13 +1087,15 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         cells.push("<td>" + fmt(r.values[n]) + "</td>");
       });
       cells.push("<td>" + fmt(r.total) + "</td>");
+      cells.push("<td>" + fmt(r.dev) + "</td>");
       cells.push("<td>" + fmt(r.wai) + "</td>");
       return "<tr>" + cells.join("") + "</tr>";
     }).join("");
     document.getElementById("contrib-table-note").textContent =
       "Last " + tail.length + " of " + data.length + " weeks in the selected range, in " +
       "percentage points of the WAI's annualised quarter-on-quarter growth. " +
-      "Sum is the contributions added up; WAI is the published figure they decompose. " +
+      "Sum is the contributions added up; WAI minus average is the published figure " +
+      "less the long-run average of " + fmt(contribAverage()) + "%, which they decompose. " +
       "Use the download button for every week and component.";
   }
 
@@ -1102,8 +1122,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     // component colour, and a dark line is what a reader expects a stacked
     // chart's total to be.
     sets.push({
-      type: "line", label: "WAI", stack: "wai",
-      data: data.map(function (r) { return r.wai; }),
+      type: "line", label: "WAI minus average", stack: "wai",
+      data: data.map(function (r) { return r.dev; }),
       borderColor: css("--text-primary"), borderWidth: 1.5,
       pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: css("--text-primary"),
       tension: 0, fill: false, order: 0
@@ -1131,7 +1151,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
                ticks: { color: css("--text-secondary"),
                         callback: function (val) { return val + "%"; } },
                title: { display: true,
-                        text: "Contribution to WAI, QoQ growth, annualised",
+                        text: "Deviation from average growth, QoQ annualised, pp",
                         color: css("--text-muted"), font: { size: 11 } } }
         },
         plugins: {
@@ -1152,7 +1172,9 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
               footer: function (items) {
                 var r = data[items.length ? items[0].dataIndex : -1];
                 if (!r) return "";
-                return "Sum " + fmt(r.total) + " · published WAI " + fmt(r.wai);
+                return "Sum " + fmt(r.total) + " · WAI " + fmt(r.wai) +
+                       " = average " + fmt(r.trend) + " " + (r.dev < 0 ? "− " : "+ ") +
+                       fmt(Math.abs(r.dev));
               }
             }
           }
@@ -1189,7 +1211,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         var unit = (measMeta && measMeta.contributions_unit) ||
           "percentage points of wai_qoq (annualised quarter-on-quarter growth, %)";
         document.getElementById("contrib-caption").textContent =
-          "Contributions are measured in " + unit + ". " +
+          "Contributions are measured in " + unit + ", as deviations from the WAI's " +
+          "long-run average of " + fmt(contribAverage()) + "% (GDP's average growth over the " +
+          "estimation sample, which the model's standardised data leave out and the " +
+          "published scale adds back). " +
           contribRows.length.toLocaleString() + " weeks × " +
           contribComponents().length + " components" +
           (measMeta && measMeta.vintage_date ? ", vintage " + measMeta.vintage_date : "") +
@@ -1634,7 +1659,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
              : "Average of the " + weeks.length + " weeks to " + weeks[weeks.length - 1].date;
     var hidden = picked.length - data.length;
     document.getElementById("ind-caption").textContent = span + ". All indicators sum to " +
-      fmtSigned(sum, 2) + "; with trend and the unexplained remainder (" + fmtSigned(other, 2) +
+      fmtSigned(sum, 2) + "; with the long-run average growth and the unexplained remainder (" + fmtSigned(other, 2) +
       ") that is a WAI of " + fmt(sum + other, 2) + ". The three largest indicators, leaving out GDP, " +
       "make up " + fmt(top3, 0) + "% of the absolute contributions." +
       (hidden ? " " + hidden + " round to zero and are in the table only." : "");
