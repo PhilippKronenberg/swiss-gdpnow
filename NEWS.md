@@ -21,14 +21,14 @@ published.
 
 ## 2026-11-08
 
-- **Presentation** — The contributions panel shows deviations from average
-  growth. The model has no constant: every series enters it standardised, so a
-  factor of zero means GDP growing at its long-run average, which the published
-  scale adds back. That average was drawn as a "Trend" bar, the same height in
-  every week, which read as a time trend. It is now the baseline: the bars
-  explain why growth is above or below the average (1.7%), and the line is the
-  WAI minus that average. The published files are unchanged; `trend` is still a
-  component of `wai_contributions.csv`.
+- **Presentation** — The contributions panel stacks the bars on average growth.
+  The model has no constant: every series enters it standardised, so a factor of
+  zero means GDP growing at its long-run average, which the published scale adds
+  back. That average was drawn as a "Trend" bar, the same height in every week,
+  which read as a time trend. It is now a dashed line at 1.7% that the bars stand
+  on: the axis is still the growth rate, the line is still the WAI, and the bars
+  explain why growth is above or below the average. The published files are
+  unchanged; `trend` is still a component of `wai_contributions.csv`.
 - The site moved from the former `wai-webapp` repository to this one, keeping its
   history. The data now comes from a private pipeline repository, weekly.
 
