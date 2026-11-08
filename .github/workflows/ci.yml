@@ -3,7 +3,7 @@ name: CI
 # Nothing used to stand between a commit and the live dashboard. index.html is
 # the entire application and wai_data.csv the entire data layer, so a malformed
 # commit to either published straight to
-# https://philippkronenberg.github.io/wai-webapp/ with nothing in the way.
+# https://philippkronenberg.github.io/wai-website/ with nothing in the way.
 #
 # Everything here runs without installing anything into the repository. This
 # project has no build step and no node_modules by design, and CI should not be

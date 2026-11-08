@@ -1,9 +1,9 @@
-# wai-webapp
+# wai-website
 
 What changed on the published dashboard, and when.
 
 There are no version numbers here. A merge to `main` deploys to
-<https://philippkronenberg.github.io/wai-webapp/> straight away, so what is
+<https://philippkronenberg.github.io/wai-website/> straight away, so what is
 live is always the top of this file. Entries are dated by the day the change
 reached `main`, newest first.
 
