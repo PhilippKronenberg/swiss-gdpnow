@@ -352,6 +352,7 @@ section.notes h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 8px; f
 section.notes p { margin-bottom: 12px; }
 section.notes a { color: var(--link); }
 section.notes.about { margin-top: 8px; margin-bottom: 20px; }
+p.explain { font-size: 0.95rem; color: var(--text-secondary); margin: 8px 0 14px; }
 footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.88rem; color: var(--text-muted); }
 </style>
 <!-- With JavaScript off, everything the script would fill or drive is either
@@ -469,6 +470,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   </canvas></div>
   <div class="legend" id="legend"></div>
 </section>
+<p class="explain"><strong>Why two WAI lines on the growth charts.</strong> The blue line is the weekly index: an instantaneous annualised growth rate, read every week. Quarterly GDP is a <em>flow</em> &mdash; the average level of activity across the whole quarter &mdash; so the like-for-like comparison is the green series, the weekly index averaged over each quarter. Compared this way, the WAI matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points across 143 quarters.</p>
 
 <div class="tablewrap" id="tablewrap" hidden>
   <table id="table"><thead></thead><tbody></tbody></table>
@@ -533,6 +535,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   </section>
 
   <p class="caption" id="contrib-caption"></p>
+  <p class="explain"><strong>Reading the contributions panel.</strong> In every week, the long-run average growth plus the bars gives exactly that week's growth rate, so the bars show why growth was above or below its average. Nine bars are groups of indicators, one of them published GDP itself; surveys and proxies such as electricity or air quality count in the group they stand for. The grey bar, the <em>unexplained remainder</em>, is the part that cannot be assigned to a group, mainly estimation uncertainty. It is small in quiet periods and larger in volatile ones.</p>
 
   <div class="tablewrap" id="contrib-tablewrap" hidden>
     <table id="contrib-table"><thead></thead><tbody></tbody></table>
@@ -610,6 +613,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   </section>
 
   <p class="caption" id="news-summary"></p>
+  <p class="explain"><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of this quarter's GDP growth with the data released since the previous one. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
 
   <section class="controls" aria-label="News controls">
     <label class="check"><input type="checkbox" id="show-news-table"> News table</label>
@@ -651,6 +655,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   </section>
 
   <p class="caption" id="series-caption"></p>
+  <p class="explain"><strong>Reading the series panel.</strong> <em>R²</em> says how much of an indicator's own week-to-week variation the common factor explains; a low value is normal for a noisy weekly series and does not mean the series is useless, since the model weighs each one by how informative it is. The <em>loading</em> says how strongly, and in which direction, the series moves with the factor, with a 95% credible interval; an interval that excludes zero means the series reliably co-moves with activity. Published GDP is not charted: its loading is fixed at one, which is what anchors the index to GDP.</p>
 
   <div class="tablewrap" id="series-tablewrap" hidden>
     <table id="series-table"><thead></thead><tbody></tbody></table>
@@ -662,11 +667,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
 </section>
 
 <section class="notes" aria-labelledby="notes-title">
-  <h2 id="notes-title">Notes</h2>
-  <p><strong>Why two WAI lines on the growth charts.</strong> The blue line is the weekly index: an instantaneous annualised growth rate, read every week. Quarterly GDP is a <em>flow</em> &mdash; the average level of activity across the whole quarter &mdash; so the like-for-like comparison is the green series, the weekly index averaged over each quarter. Compared this way, the WAI matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points across 143 quarters.</p>
-  <p><strong>Reading the contributions panel.</strong> In every week, the long-run average growth plus the bars gives exactly that week's growth rate, so the bars show why growth was above or below its average. Nine bars are groups of indicators, one of them published GDP itself; surveys and proxies such as electricity or air quality count in the group they stand for. The grey bar, the <em>unexplained remainder</em>, is the part that cannot be assigned to a group, mainly estimation uncertainty. It is small in quiet periods and larger in volatile ones.</p>
-  <p><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of this quarter's GDP growth with the data released since the previous one. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
-  <p><strong>Reading the series panel.</strong> <em>R²</em> says how much of an indicator's own week-to-week variation the common factor explains; a low value is normal for a noisy weekly series and does not mean the series is useless, since the model weighs each one by how informative it is. The <em>loading</em> says how strongly, and in which direction, the series moves with the factor, with a 95% credible interval; an interval that excludes zero means the series reliably co-moves with activity. Published GDP is not charted: its loading is fixed at one, which is what anchors the index to GDP.</p>
+  <h2 id="notes-title">Sources and licence</h2>
   <p>Methodology and full empirical results: Kronenberg (2026), <em>Swiss Journal of Economics and Statistics</em>, 162:10, <a href="https://doi.org/10.1186/s41937-026-00157-w">doi:10.1186/s41937-026-00157-w</a>, extending Eckert, Kronenberg, Mikosch &amp; Neuwirth (2025), <em>Journal of Applied Econometrics</em>, 40(3), 270–290, <a href="https://doi.org/10.1002/jae.3104">doi:10.1002/jae.3104</a>.</p>
   <!-- Hidden until mfbdfm is published; restore by removing this comment wrapper.
   <p>The index is produced by the open-source <a href="https://github.com/PhilippKronenberg/mfbdfm">mfbdfm</a> R package (<a href="https://philippkronenberg.github.io/mfbdfm/">documentation</a>).</p> -->
