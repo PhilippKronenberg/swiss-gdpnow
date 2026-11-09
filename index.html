@@ -1401,11 +1401,11 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     var panel = document.getElementById("drivers");
     // Returned so the news and series panels can start once measMeta is set;
     // the chain ends in a catch, so it always resolves.
-    return fetch("wai_measures_meta.json?v=" + bust)
+    return fetch("wai_measures_meta.json?v=" + bust, { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (m) { measMeta = m; })
       .catch(function () { measMeta = null; })
-      .then(function () { return fetch("wai_contributions.csv?v=" + bust); })
+      .then(function () { return fetch("wai_contributions.csv?v=" + bust, { cache: "no-cache" }); })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_contributions.csv");
         return r.text();
@@ -1572,7 +1572,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       panel.hidden = false;
       return;
     }
-    fetch("wai_news.csv?v=" + bust)
+    fetch("wai_news.csv?v=" + bust, { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_news.csv");
         return r.text();
@@ -1722,7 +1722,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   function loadSeries() {
     var panel = document.getElementById("series");
     // Returned so the indicator panel can start once the names are in.
-    return fetch("wai_series.csv?v=" + bust)
+    return fetch("wai_series.csv?v=" + bust, { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_series.csv");
         return r.text();
@@ -1881,7 +1881,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   function loadIndicators() {
     var panel = document.getElementById("indicators");
     if (!seriesRows.length || !contribRows.length) return;
-    fetch("wai_contributions_series.csv?v=" + bust)
+    fetch("wai_contributions_series.csv?v=" + bust, { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_contributions_series.csv");
         return r.text();
@@ -2060,11 +2060,11 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   // --- load --------------------------------------------------------------
   var bust = new Date().toISOString().slice(0, 10);
 
-  fetch("wai_meta.json?v=" + bust)
+  fetch("wai_meta.json?v=" + bust, { cache: "no-cache" })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (m) { meta = m; })
     .catch(function () { meta = null; })
-    .then(function () { return fetch("wai_data.csv?v=" + bust); })
+    .then(function () { return fetch("wai_data.csv?v=" + bust, { cache: "no-cache" }); })
     .then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_data.csv");
       return r.text();
