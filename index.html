@@ -409,7 +409,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   <div class="ctl-group">
     <span class="ctl-label" id="lbl-view">View</span>
     <div class="seg" role="group" aria-labelledby="lbl-view" id="view-seg">
-      <button type="button" data-view="qoq" aria-pressed="true">QoQ growth</button>
+      <button type="button" data-view="qoq" aria-pressed="true">QoQ annualised</button>
+      <button type="button" data-view="qoqq" aria-pressed="false">QoQ</button>
       <button type="button" data-view="yoy" aria-pressed="false">YoY growth</button>
       <button type="button" data-view="index" aria-pressed="false">Level index</button>
     </div>
@@ -423,8 +424,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       <button type="button" data-years="1" aria-pressed="false">1y</button>
       <button type="button" data-years="2" aria-pressed="false">2y</button>
       <button type="button" data-years="5" aria-pressed="true">5y</button>
-      <button type="button" data-since="2015" aria-pressed="false">2015</button>
-      <button type="button" data-since="2020" aria-pressed="false">2020</button>
+      <button type="button" data-years="10" aria-pressed="false">10y</button>
+      <button type="button" data-years="20" aria-pressed="false">20y</button>
       <button type="button" data-years="0" aria-pressed="false">Full</button>
     </div>
   </div>
@@ -494,9 +495,9 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         <button type="button" data-months="6" aria-pressed="false">6m</button>
         <button type="button" data-years="1" aria-pressed="false">1y</button>
         <button type="button" data-years="2" aria-pressed="false">2y</button>
-        <button type="button" data-years="5" aria-pressed="false">5y</button>
-        <button type="button" data-since="2015" aria-pressed="false">2015</button>
-        <button type="button" data-since="2020" aria-pressed="true">2020</button>
+        <button type="button" data-years="5" aria-pressed="true">5y</button>
+        <button type="button" data-years="10" aria-pressed="false">10y</button>
+        <button type="button" data-years="20" aria-pressed="false">20y</button>
         <button type="button" data-years="0" aria-pressed="false">Full</button>
       </div>
     </div>
@@ -687,6 +688,11 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     qoq:   { label: "WAI, quarter-on-quarter growth, annualised",
              unit: "%", mean: "wai_qoq", lo: "wai_qoq_lo", hi: "wai_qoq_hi",
              gdp: "gdp_qoq", quarterly: "wai_qoq_q" },
+    // Not annualised: the quarter-on-quarter rate as SECO reports GDP, derived in
+    // addNotAnnualised() from the annualised columns.
+    qoqq:  { label: "WAI, quarter-on-quarter growth, not annualised",
+             unit: "%", mean: "wai_qoq_notann", lo: "wai_qoq_lo_notann", hi: "wai_qoq_hi_notann",
+             gdp: "gdp_qoq_notann", quarterly: "wai_qoq_q_notann" },
     yoy:   { label: "WAI, year-over-year growth",
              unit: "%", mean: "wai_yoy", lo: null, hi: null,
              gdp: "gdp_yoy", quarterly: "wai_yoy_q" },
@@ -725,7 +731,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
                     "Labour market", "Money and interest rates", "parameter_uncertainty"];
 
   var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true };
-  var cstate = { years: null, since: 2020 };
+  var cstate = { years: 5, since: null };
   var rows = [], meta = null, chart = null;
   var contribRows = [], measMeta = null, contribChart = null;
 
@@ -773,6 +779,18 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       out.push(row);
     }
     return out;
+  }
+
+  // The quarter-on-quarter columns are annualised, ((1 + q)^4 - 1) * 100. Undoing
+  // that gives the quarterly rate as SECO reports GDP. It is monotonic, so the
+  // band's bounds map to the band's bounds.
+  function notAnnualised(a) {
+    return a === null || a === undefined || isNaN(a) ? null : (Math.pow(1 + a / 100, 0.25) - 1) * 100;
+  }
+  function addNotAnnualised(rs) {
+    var cols = ["wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_qoq_q", "gdp_qoq"];
+    rs.forEach(function (r) { cols.forEach(function (c) { if (c in r) r[c + "_notann"] = notAnnualised(r[c]); }); });
+    return rs;
   }
 
   // Both figures have their own range control but the same two ways of
@@ -1063,14 +1081,16 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     for (var i = rows.length - 1; i >= 0 && !qrow; i--) if (rows[i].wai_qoq_q !== null) qrow = rows[i];
     var ncTiles = ncs.map(function (p) {
       return { label: "Nowcast " + p.quarter + ", QoQ annualised", value: fmt(p.value) + "%",
-               note: p.running ? "quarter running; from data to " + last.date
-                               : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date };
+               note: fmt(notAnnualised(p.value)) + "% not annualised; " +
+                     (p.running ? "quarter running; from data to " + last.date
+                                : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date) };
     });
     var tiles = (ncTiles.length ? ncTiles
       : [{ label: "WAI, latest quarter, QoQ annualised", value: qrow ? fmt(qrow.wai_qoq_q) + "%" : "–",
            note: qrow ? "quarter ending " + qrow.date : "" }]).concat([
       { label: "Latest week, annualised", value: fmt(last.wai_qoq) + "%",
-        note: "week ending " + last.date + ", 95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
+        note: fmt(last.wai_qoq_notann) + "% not annualised; week ending " + last.date +
+              ", 95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
       { label: "WAI, year-over-year", value: fmt(last.wai_yoy) + "%",
         note: yearAgoStr ? yearAgoStr + " to " + last.date : "12 months to " + last.date },
       { label: "Level index", value: fmt(last.wai_index, 1),
@@ -2031,7 +2051,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       return r.text();
     })
     .then(function (text) {
-      rows = parseCSV(text);
+      rows = addNotAnnualised(parseCSV(text));
       if (!rows.length) throw new Error("wai_data.csv contains no rows");
 
       if (meta && meta.sample) {

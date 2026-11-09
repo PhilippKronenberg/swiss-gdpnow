@@ -21,6 +21,14 @@ published.
 
 ## 2026-11-09
 
+- **Presentation** — A "QoQ" view shows quarter-on-quarter growth not
+  annualised, as SECO reports GDP: the weekly WAI, its band, the quarterly WAI,
+  GDP and the nowcasts, each converted as ((1 + a/100)^(1/4) - 1) * 100 from the
+  annualised figure a. The former "QoQ growth" view is now "QoQ annualised". The
+  nowcast and latest-week tiles also give the non-annualised value. The
+  contributions stay annualised, since the conversion is not additive.
+- **Presentation** — The range buttons 2015 and 2020 are replaced by 10y and 20y,
+  on both time charts. The contributions chart opens on 5y instead of 2020.
 - **Presentation** — Between the end of a quarter and SECO's GDP release, the
   dashboard shows two nowcasts: the quarter just ended (first tile) and the quarter
   running (second tile), each also as a diamond in the growth chart. Until now only
