@@ -1732,9 +1732,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
                               "loading", "loading_lo", "loading_hi"], "wai_series.csv");
         var shown = seriesRows.filter(function (r) { return !isAnchor(r); }).length;
         document.getElementById("series-caption").textContent =
-          shown + " input series, coloured by group. Published GDP is the anchor -- its loading " +
-          "is fixed at one, so its R² is one by construction -- and is listed in the table " +
-          "rather than charted. Data to " + rows[rows.length - 1].date + ".";
+          shown + " input series, coloured by group. Data to " + rows[rows.length - 1].date + ".";
         panel.hidden = false;
         renderSeries();
         renderSeriesTable();
