@@ -21,6 +21,9 @@ published.
 
 ## 2026-11-10
 
+- **Presentation** — The indicator panel opens on the loadings, with the Loading
+  button first and R² second. The news summary sits below its chart and is one
+  sentence; the captions under the indicator charts are shorter.
 - **Presentation** — Every figure on the page is shown with two decimals (the
   news panel and the indicator chart used three or four). The data files and
   downloads keep four. The captions under the contributions and indicator charts

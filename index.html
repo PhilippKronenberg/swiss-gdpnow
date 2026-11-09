@@ -595,8 +595,6 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   released: the bars add up to the change from last week's nowcast to this
   week's.</p>
 
-  <p class="caption" id="news-summary"></p>
-
   <section class="chart-card" id="news-card" aria-label="News: impact of this week's releases on the nowcast">
     <div class="chart-box" id="news-box"><canvas id="news-chart" role="img"
          aria-label="Bar chart of how this week's data releases moved the GDP nowcast. It is still loading; the same numbers are available from the News table checkbox below.">
@@ -604,6 +602,8 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       as text: tick the <strong>News table</strong> checkbox below.</p>
     </canvas></div>
   </section>
+
+  <p class="caption" id="news-summary"></p>
 
   <section class="controls" aria-label="News controls">
     <label class="check"><input type="checkbox" id="show-news-table"> News table</label>
@@ -617,18 +617,18 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
 <section class="drivers" id="series" aria-labelledby="series-title" hidden>
   <h2 id="series-title">How each indicator relates to the index</h2>
   <p class="lede">The index is the common movement of all its input series.
-  <em>R²</em> is the share of a series' own variation that this common movement
-  explains, from 0 to 1. The <em>loading</em> is how strongly the series moves
-  with the index, with its 95% credible interval. It is standardised by how each
-  series aggregates the weekly index, with GDP at 1, so that loadings compare across
-  weekly, monthly and quarterly series.</p>
+  The <em>loading</em> is how strongly the series moves with the index, with its
+  95% credible interval. It is standardised by how each series aggregates the
+  weekly index, with GDP at 1, so that loadings compare across weekly, monthly and
+  quarterly series. <em>R²</em> is the share of a series' own variation that this
+  common movement explains, from 0 to 1.</p>
 
   <section class="controls" aria-label="Series chart controls">
     <div class="ctl-group">
       <span class="ctl-label" id="lbl-smeasure">Show</span>
       <div class="seg" role="group" aria-labelledby="lbl-smeasure" id="series-seg">
-        <button type="button" data-measure="r2" aria-pressed="true">R²</button>
-        <button type="button" data-measure="loading" aria-pressed="false">Loading</button>
+        <button type="button" data-measure="loading" aria-pressed="true">Loading</button>
+        <button type="button" data-measure="r2" aria-pressed="false">R²</button>
       </div>
     </div>
     <label class="check"><input type="checkbox" id="show-series-table"> Series table</label>
@@ -1579,14 +1579,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         newsRows = parseTable(text, ["component"]);
         needCols(newsRows, ["component", "impact"], "wai_news.csv");
         var change = m.news_nowcast_new - m.news_nowcast_old;
-        summary.textContent =
-          "Nowcast of annualised GDP growth" +
-          (m.news_period ? " for the quarter starting " + m.news_period : "") + ": " +
-          fmt(m.news_nowcast_old, 4) + "% with the data of " + (m.news_old_vintage || "last week") +
-          ", " + fmt(m.news_nowcast_new, 4) + "% with this week's (" +
-          fmtSigned(change) + " points, from " + (m.news_new_obs !== undefined ? m.news_new_obs : "the") +
-          " newly released observations). A quiet week moves it by thousandths of a point; " +
-          "the chart's scale adapts to the size of the move.";
+        var pm = /^(\d{4})-(\d{2})/.exec(m.news_period || "");
+        var quarter = pm ? " for " + pm[1] + "Q" + (Math.floor((Number(pm[2]) - 1) / 3) + 1) : "";
+        summary.textContent = "Nowcast" + quarter + ": " + fmt(m.news_nowcast_old) + "% last week, " +
+          fmt(m.news_nowcast_new) + "% this week (" + fmtSigned(change) + " points, annualised).";
         panel.hidden = false;
         renderNews();
       })
@@ -1603,7 +1599,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   // one and its R-squared is one by construction -- not a finding, and a bar of
   // length one would set the scale every other series is read against. It stays
   // in the table, labelled.
-  var seriesRows = [], seriesChart = null, sstate = { measure: "r2" };
+  var seriesRows = [], seriesChart = null, sstate = { measure: "loading" };
   var FREQ = { 4: "quarterly", 12: "monthly", 48: "weekly" };
 
   function isAnchor(r) { return r.group === "GDP (target)"; }
