@@ -19,6 +19,15 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
+## 2026-11-10
+
+- **Presentation** — Every figure on the page is shown with two decimals (the
+  news panel and the indicator chart used three or four). The data files and
+  downloads keep four. The captions under the contributions and indicator charts
+  give the date of the latest data instead of the model's evaluation date, which
+  lay a week ahead ("vintage 2026-11-14" for data to 2026-11-07). The text above
+  the contributions chart is simpler.
+
 ## 2026-11-09
 
 - **Presentation** — A "QoQ" view shows quarter-on-quarter growth not

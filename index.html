@@ -738,8 +738,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   function css(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
+  // Every figure on the page is shown with two decimals. The data files keep four,
+  // so the downloads stay exact; `d` is accepted and ignored.
   function fmt(v, d) {
-    return (v === null || v === undefined || isNaN(v)) ? "–" : v.toFixed(d === undefined ? 2 : d);
+    return (v === null || v === undefined || isNaN(v)) ? "–" : v.toFixed(2);
   }
   function showError(msg) {
     var el = document.getElementById("error-banner");
@@ -1421,10 +1423,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
           fmt(contribAverage()) + "% (GDP's average growth over the estimation sample, which " +
           "the model's standardised data leave out and the published scale adds back). " +
           contribRows.length.toLocaleString() + " weeks × " +
-          contribComponents().length + " components" +
-          (measMeta && measMeta.vintage_date ? ", vintage " + measMeta.vintage_date : "") +
-          ". Figures are rounded to four decimals, so a week's bars can miss its " +
-          "WAI by a thousandth of a point.";
+          contribComponents().length + " components, data to " + rows[rows.length - 1].date + ".";
 
         panel.hidden = false;   // before the draw: a hidden canvas has no size
         renderContrib();
@@ -1474,7 +1473,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
   // a quiet week's news is genuinely that small and two would print zeros.
   function fmtSigned(v, d) {
     if (v === null || v === undefined || isNaN(v)) return "–";
-    var s = v.toFixed(d === undefined ? 4 : d);
+    var s = v.toFixed(2);
     return (v > 0 ? "+" : "") + s;
   }
 
@@ -1734,8 +1733,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         document.getElementById("series-caption").textContent =
           shown + " input series, coloured by group. Published GDP is the anchor -- its loading " +
           "is fixed at one, so its R² is one by construction -- and is listed in the table " +
-          "rather than charted." +
-          (measMeta && measMeta.vintage_date ? " Vintage " + measMeta.vintage_date + "." : "");
+          "rather than charted. Data to " + rows[rows.length - 1].date + ".";
         panel.hidden = false;
         renderSeries();
         renderSeriesTable();
