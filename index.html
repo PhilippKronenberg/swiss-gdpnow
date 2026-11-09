@@ -248,7 +248,8 @@ header .icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--on-
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .stat { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
 .stat-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--brand); font-weight: 600; }
-.stat-value { font-size: 1.7rem; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.stat-value { font-size: 1.7rem; font-weight: 600; margin-top: 4px; line-height: 1.25; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.stat-ann { font-size: 0.95rem; font-weight: 400; color: var(--text-secondary); letter-spacing: 0; white-space: nowrap; display: inline-block; line-height: 1.3; }
 .stat-note { font-size: 0.85rem; color: var(--text-muted); margin-top: 3px; }
 
 .controls {
@@ -895,14 +896,28 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     var ncs = nowcastPoints(v).filter(function (p) {
       return data.length && p.t >= data[0].t && p.t <= data[data.length - 1].t;
     });
-    if (ncs.length) {
-      sets.push({ label: "Nowcast " + ncs.map(function (p) { return p.quarter; }).join(", "),
-                  data: ncs.map(function (p) { return { x: p.t, y: p.value }; }),
+    // One dataset per quarter, so the hover names its quarter.
+    ncs.forEach(function (p) {
+      sets.push({ label: "Nowcast " + p.quarter,
+                  data: [{ x: p.t, y: p.value }],
                   showLine: false, borderColor: css("--surface-1"),
                   backgroundColor: css("--series-nowcast"), pointStyle: "rectRot",
                   pointRadius: 8, pointHoverRadius: 10, pointBorderWidth: 2, order: -1 });
-    }
+    });
     return sets;
+  }
+
+  // A quarter-on-quarter value is written not annualised, with the annualised
+  // figure in brackets: "0.76% (ann. 3.07%)". `view` says which scale the value
+  // is on; other views print the value as it is.
+  function annualised(n) {
+    return n === null || n === undefined || isNaN(n) ? null : (Math.pow(1 + n / 100, 4) - 1) * 100;
+  }
+  function qoqText(view, value) {
+    if (value === null || value === undefined || isNaN(value)) return "–";
+    if (view === "qoq") return fmt(notAnnualised(value)) + "% (ann. " + fmt(value) + "%)";
+    if (view === "qoqq") return fmt(value) + "% (ann. " + fmt(annualised(value)) + "%)";
+    return fmt(value) + (VIEWS[view].unit || "");
   }
 
   // The nowcasts: every quarter the WAI covers whose GDP is not yet published.
@@ -936,11 +951,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     if (state.gdp && v.gdp) {
       parts.push('<span><i class="swatch dot" style="background:' + css("--series-gdp") + '"></i>Published GDP</span>');
     }
-    var ncs = nowcastPoints(v);
-    if (ncs.length) {
+    nowcastPoints(v).forEach(function (p) {
       parts.push('<span><i class="swatch diamond" style="background:' + css("--series-nowcast") +
-                 '"></i>Nowcast ' + ncs.map(function (p) { return esc(p.quarter) + ": " + fmt(p.value) + v.unit; }).join(", ") + '</span>');
-    }
+                 '"></i>Nowcast ' + esc(p.quarter) + ": " + qoqText(state.view, p.value) + '</span>');
+    });
     document.getElementById("legend").innerHTML = parts.join("");
   }
 
@@ -1027,7 +1041,7 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
                 var y = item.parsed.y;
                 if (y === null || y === undefined) return null;
                 var name = item.dataset.label === "95% credible band" ? "upper bound" : item.dataset.label;
-                return name + ": " + y.toFixed(2) + (v.unit || "");
+                return name + ": " + qoqText(state.view, y);
               }
             }
           }
@@ -1079,18 +1093,23 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     var ncs = nowcastPoints(VIEWS.qoq);
     var qrow = null;
     for (var i = rows.length - 1; i >= 0 && !qrow; i--) if (rows[i].wai_qoq_q !== null) qrow = rows[i];
+    // Quarter-on-quarter tiles: the rate not annualised, as SECO reports GDP, and
+    // the annualised rate in brackets.
+    var qv = function (a) {
+      return a === null || a === undefined || isNaN(a) ? "–"
+        : fmt(notAnnualised(a)) + '% <span class="stat-ann">(ann. ' + fmt(a) + "%)</span>";
+    };
     var ncTiles = ncs.map(function (p) {
-      return { label: "Nowcast " + p.quarter + ", QoQ annualised", value: fmt(p.value) + "%",
-               note: fmt(notAnnualised(p.value)) + "% not annualised; " +
-                     (p.running ? "quarter running; from data to " + last.date
-                                : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date) };
+      return { label: "Nowcast " + p.quarter + ", QoQ (annualised)", value: qv(p.value),
+               note: p.running ? "quarter running; from data to " + last.date
+                               : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date };
     });
     var tiles = (ncTiles.length ? ncTiles
-      : [{ label: "WAI, latest quarter, QoQ annualised", value: qrow ? fmt(qrow.wai_qoq_q) + "%" : "–",
+      : [{ label: "WAI, latest quarter, QoQ (annualised)", value: qrow ? qv(qrow.wai_qoq_q) : "–",
            note: qrow ? "quarter ending " + qrow.date : "" }]).concat([
-      { label: "Latest week, annualised", value: fmt(last.wai_qoq) + "%",
-        note: fmt(last.wai_qoq_notann) + "% not annualised; week ending " + last.date +
-              ", 95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
+      { label: "Latest week, QoQ (annualised)", value: qv(last.wai_qoq),
+        note: "week ending " + last.date + ", 95% band " + fmt(last.wai_qoq_lo_notann) + " to " +
+              fmt(last.wai_qoq_hi_notann) + " (ann. " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) + ")" },
       { label: "WAI, year-over-year", value: fmt(last.wai_yoy) + "%",
         note: yearAgoStr ? yearAgoStr + " to " + last.date : "12 months to " + last.date },
       { label: "Level index", value: fmt(last.wai_index, 1),
