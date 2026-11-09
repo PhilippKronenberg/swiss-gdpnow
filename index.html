@@ -785,19 +785,34 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     if (st.from !== undefined && st.from !== null) {
       return arr.filter(function (r) { return r.t >= st.from && r.t <= st.to; });
     }
+    var start;
     if (st.months) {
       var mcut = new Date(arr[arr.length - 1].t);
       mcut.setUTCMonth(mcut.getUTCMonth() - st.months);
-      return arr.filter(function (r) { return r.t > mcut.getTime(); });
+      start = mcut.getTime() + 1;
+    } else if (st.since) {
+      start = Date.UTC(st.since, 0, 1);
+    } else if (st.years) {
+      var cut = new Date(arr[arr.length - 1].t);
+      cut.setUTCFullYear(cut.getUTCFullYear() - st.years);
+      start = cut.getTime();
+    } else {
+      return arr;
     }
-    if (st.since) {
-      var from = Date.UTC(st.since, 0, 1);
-      return arr.filter(function (r) { return r.t >= from; });
-    }
-    if (!st.years) return arr;
-    var cut = new Date(arr[arr.length - 1].t);
-    cut.setUTCFullYear(cut.getUTCFullYear() - st.years);
-    return arr.filter(function (r) { return r.t >= cut.getTime(); });
+    var i0 = 0;
+    while (i0 < arr.length && arr[i0].t < start) i0++;
+    return arr.slice(widenToQuarter(arr, i0));
+  }
+  // A preset range starts mid-quarter, so the quarterly WAI and GDP of the quarter
+  // before it would sit just outside, and the quarterly line would begin in the
+  // middle of the chart. Reach back to that quarter's last week (at most 13 weeks)
+  // so its point is shown. Rows without quarterly columns are left as cut.
+  function widenToQuarter(arr, i0) {
+    var q = function (r) {
+      return [r.wai_qoq_q, r.wai_yoy_q, r.gdp_qoq, r.gdp_yoy].some(function (x) { return x !== null && x !== undefined; });
+    };
+    for (var j = i0 - 1; j >= 0 && j >= i0 - 13; j--) if (q(arr[j])) return j;
+    return i0;
   }
   function visibleRows() { return sliceRange(rows, state); }
 
@@ -957,7 +972,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
         interaction: { mode: "index", intersect: false },
         animation: false,
         scales: {
+          // Half a week of margin, so the first and last markers are not cut by the edge.
           x: { type: "time", time: { tooltipFormat: "d MMM yyyy" },
+               min: data.length ? data[0].t - 3.5 * 864e5 : undefined,
+               max: data.length ? data[data.length - 1].t + 3.5 * 864e5 : undefined,
                grid: { display: false },
                border: { color: css("--border") },
                ticks: { color: css("--text-secondary"), maxRotation: 0, autoSkipPadding: 24 } },

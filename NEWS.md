@@ -19,6 +19,14 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
+## 2026-11-09
+
+- **Presentation** — The range buttons (1m to 5y, 2015, 2020) on the growth chart
+  start at the last week of the quarter before the period, so the quarterly WAI
+  and GDP of that quarter are shown and the quarterly line no longer begins in the
+  middle of the chart. The chart has half a week of margin at both ends, so the
+  first and last markers are not cut by the edge. The numbers did not change.
+
 ## 2026-11-08
 
 - **Presentation** — The first tile is the nowcast: the current quarter's
