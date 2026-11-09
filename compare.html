@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>WAI variant comparison</title>
+<style>
+:root {
+  --surface-0: #f6f6f4; --surface-1: #fcfcfb; --border: #dcdbd5; --grid: #ecebe6;
+  --text-primary: #1f1f1c; --text-secondary: #4f4e49; --text-muted: #6d6c65;
+  --brand: #1d5e66; --on-accent: #ffffff;
+  --v1: #2a78d6; --v2: #d98500; --v3: #b25f94; --gdp: #eb6834; --nowcast: #b3122e;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface-0: #121211; --surface-1: #1a1a19; --border: #33332f; --grid: #262624;
+    --text-primary: #ecebe4; --text-secondary: #c3c2b7; --text-muted: #93928a;
+    --brand: #7fc4c9; --on-accent: #10201f;
+    --v1: #3987e5; --v2: #bd881c; --v3: #bd6c9c; --gdp: #d95926; --nowcast: #e63374;
+  }
+}
+:root[data-theme="dark"] {
+  --surface-0: #121211; --surface-1: #1a1a19; --border: #33332f; --grid: #262624;
+  --text-primary: #ecebe4; --text-secondary: #c3c2b7; --text-muted: #93928a;
+  --brand: #7fc4c9; --on-accent: #10201f;
+  --v1: #3987e5; --v2: #bd881c; --v3: #bd6c9c; --gdp: #d95926; --nowcast: #e63374;
+}
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--surface-0); color: var(--text-primary); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 1.6rem; color: var(--brand); margin-bottom: 6px; }
+h2 { font-size: 1.15rem; color: var(--brand); margin: 28px 0 8px; }
+p { color: var(--text-secondary); margin-bottom: 10px; max-width: 900px; }
+a { color: var(--brand); }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.ctl-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--brand); font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
+.seg button { background: var(--surface-1); border: 0; border-right: 1px solid var(--border); padding: 6px 12px; font: inherit; font-size: 0.92rem; color: var(--text-secondary); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--brand); color: var(--on-accent); font-weight: 600; }
+label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; color: var(--text-secondary); cursor: pointer; }
+.range-row { flex: 1 1 100%; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.range-slider { position: relative; flex: 1 1 260px; min-width: 200px; height: 28px; }
+.range-slider::before { content: ""; position: absolute; left: 8px; right: 8px; top: 12px; height: 4px; background: var(--border); border-radius: 2px; }
+.range-slider .rs-fill { position: absolute; top: 12px; height: 4px; background: var(--brand); border-radius: 2px; }
+.range-slider input[type=range] { position: absolute; left: 0; top: 0; width: 100%; height: 28px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.range-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--brand); border: 2px solid var(--surface-1); cursor: pointer; }
+.range-slider input[type=range]::-moz-range-thumb { pointer-events: auto; width: 14px; height: 14px; border-radius: 50%; background: var(--brand); border: 2px solid var(--surface-1); cursor: pointer; }
+.range-label { font-size: 0.9rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.chart-box { position: relative; height: 380px; }
+.small .chart-box { height: 230px; }
+.small h3 { font-size: 1rem; margin-bottom: 4px; }
+.small p { font-size: 0.9rem; margin-bottom: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 8px; font-size: 0.92rem; color: var(--text-secondary); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.sw.dot { width: 9px; height: 9px; border-radius: 50%; }
+.sw.dia { width: 9px; height: 9px; transform: rotate(45deg); }
+.sw.dash { background: repeating-linear-gradient(90deg, var(--text-muted) 0 4px, transparent 4px 7px) !important; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--text-secondary); font-weight: 600; }
+.tablewrap { overflow-x: auto; }
+.note { font-size: 0.88rem; color: var(--text-muted); }
+#err { display: none; color: var(--nowcast); }
+</style>
+</head>
+<body>
+<main>
+<h1>WAI: how the VIX enters, three variants</h1>
+<p>A working page for choosing how the volatility index (VIX, the Swiss VSMI) enters the
+model. It is not linked from the <a href="./">dashboard</a>, and nothing here is
+the published index. Each variant is a full fit on the same data, with the
+publication's settings.</p>
+<p id="err"></p>
+
+<div class="card controls" aria-label="Range for all charts">
+  <span class="ctl-label">Range</span>
+  <div class="seg" role="group" id="range-seg">
+    <button type="button" data-months="1">1m</button>
+    <button type="button" data-months="3">3m</button>
+    <button type="button" data-months="6">6m</button>
+    <button type="button" data-years="1">1y</button>
+    <button type="button" data-years="2" aria-pressed="true">2y</button>
+    <button type="button" data-years="5">5y</button>
+    <button type="button" data-since="2015">2015</button>
+    <button type="button" data-since="2020">2020</button>
+    <button type="button" data-years="0">Full</button>
+  </div>
+  <label class="check"><input type="checkbox" id="show-q" checked> Quarterly aggregates</label>
+  <label class="check"><input type="checkbox" id="show-gdp" checked> Published GDP</label>
+  <div class="range-row">
+    <span class="ctl-label">Dates</span>
+    <div class="range-slider" id="slider">
+      <div class="rs-fill"></div>
+      <input type="range" class="rs-lo" aria-label="First week shown" min="0" max="1" value="0">
+      <input type="range" class="rs-hi" aria-label="Last week shown" min="0" max="1" value="1">
+    </div>
+    <span class="range-label" id="range-label" aria-live="polite"></span>
+  </div>
+</div>
+
+<h2>All three weekly paths</h2>
+<div class="card">
+  <div class="chart-box"><canvas id="c-all" role="img" aria-label="Line chart of the weekly WAI under three variants."></canvas></div>
+  <div class="legend" id="lg-all"></div>
+</div>
+
+<h2>Each variant on its own</h2>
+<p>Same axis in all three. The thin line is the weekly rate, annualised; the grey line joins its
+quarterly aggregates, which is what compares with GDP (dots). The diamond is the nowcast for
+the current quarter.</p>
+<div id="smalls"></div>
+
+<h2>Key figures</h2>
+<div class="card tablewrap">
+  <table id="tbl"><thead></thead><tbody></tbody></table>
+  <p class="note" id="tbl-note"></p>
+</div>
+</main>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="vendor/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var COLORS = ["--v1", "--v2", "--v3"];
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function fmt(v, d) { return (v === null || v === undefined || isNaN(v)) ? "–" : Number(v).toFixed(d === undefined ? 2 : d); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  var rows = [], meta = null, charts = [], st = { years: 2 };
+
+  function parse(text) {
+    var lines = text.trim().split(/\r?\n/), head = lines[0].split(",");
+    return lines.slice(1).map(function (l) {
+      var p = l.split(","), r = { date: p[0], t: new Date(p[0] + "T00:00:00Z").getTime() };
+      for (var i = 1; i < head.length; i++) r[head[i]] = p[i] === "" ? null : Number(p[i]);
+      return r;
+    });
+  }
+
+  function slice() {
+    if (!rows.length) return rows;
+    if (st.from != null) return rows.filter(function (r) { return r.t >= st.from && r.t <= st.to; });
+    var last = new Date(rows[rows.length - 1].t), cut;
+    if (st.months) { cut = new Date(last); cut.setUTCMonth(cut.getUTCMonth() - st.months); return rows.filter(function (r) { return r.t > cut.getTime(); }); }
+    if (st.since) { cut = Date.UTC(st.since, 0, 1); return rows.filter(function (r) { return r.t >= cut; }); }
+    if (!st.years) return rows;
+    cut = new Date(last); cut.setUTCFullYear(cut.getUTCFullYear() - st.years);
+    return rows.filter(function (r) { return r.t >= cut.getTime(); });
+  }
+
+  function axisOpts(ymin, ymax) {
+    return {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: "index", intersect: false },
+      scales: {
+        x: { type: "time", time: { tooltipFormat: "d MMM yyyy" }, grid: { display: false },
+             ticks: { color: css("--text-secondary"), maxRotation: 0, autoSkipPadding: 20 } },
+        y: { min: ymin, max: ymax, grid: { color: css("--grid") }, border: { display: false },
+             ticks: { color: css("--text-secondary"), callback: function (v) { return v + "%"; } },
+             title: { display: true, text: "QoQ growth, annualised", color: css("--text-muted"), font: { size: 11 } } }
+      },
+      plugins: { legend: { display: false },
+        tooltip: { backgroundColor: css("--surface-1"), titleColor: css("--text-primary"), bodyColor: css("--text-secondary"),
+                   borderColor: css("--border"), borderWidth: 1,
+                   callbacks: { label: function (i) { return i.parsed.y == null ? null : i.dataset.label + ": " + i.parsed.y.toFixed(2) + "%"; } } } }
+    };
+  }
+
+  function gdpSet(data) {
+    return { label: "Published GDP", data: data.filter(function (r) { return r.gdp_qoq !== null; }).map(function (r) { return { x: r.t, y: r.gdp_qoq }; }),
+             showLine: false, backgroundColor: css("--gdp"), borderColor: css("--surface-1"), pointRadius: 4, pointBorderWidth: 1.5, order: 0 };
+  }
+
+  function nowcastOf(key) {
+    var last = rows[rows.length - 1];
+    return last && last[key + "_q"] !== null && last.gdp_qoq === null ? { t: last.t, y: last[key + "_q"] } : null;
+  }
+
+  function draw() {
+    charts.forEach(function (c) { c.destroy(); }); charts = [];
+    var data = slice(), V = meta.variants, showQ = document.getElementById("show-q").checked,
+        showG = document.getElementById("show-gdp").checked;
+    var lo = Infinity, hi = -Infinity;
+    data.forEach(function (r) {
+      V.forEach(function (v) { [r[v.key], showQ ? r[v.key + "_q"] : null].forEach(function (x) { if (x !== null) { lo = Math.min(lo, x); hi = Math.max(hi, x); } }); });
+      if (showG && r.gdp_qoq !== null) { lo = Math.min(lo, r.gdp_qoq); hi = Math.max(hi, r.gdp_qoq); }
+    });
+    var pad = (hi - lo) * 0.06 || 1, ymin = Math.floor(lo - pad), ymax = Math.ceil(hi + pad);
+
+    // overlay
+    var sets = V.map(function (v, i) {
+      return { label: v.label, data: data.map(function (r) { return { x: r.t, y: r[v.key] }; }),
+               borderColor: css(COLORS[i]), borderWidth: 1.6, pointRadius: 0, tension: 0, order: 1 };
+    });
+    if (showG) sets.push(gdpSet(data));
+    charts.push(new Chart(document.getElementById("c-all"), { type: "line", data: { datasets: sets }, options: axisOpts(ymin, ymax) }));
+    document.getElementById("lg-all").innerHTML = V.map(function (v, i) {
+      return '<span><i class="sw" style="background:' + css(COLORS[i]) + '"></i>' + esc(v.label) + "</span>";
+    }).join("") + (showG ? '<span><i class="sw dot" style="background:' + css("--gdp") + '"></i>Published GDP</span>' : "");
+
+    // small multiples
+    V.forEach(function (v, i) {
+      var s = [{ label: "Weekly", data: data.map(function (r) { return { x: r.t, y: r[v.key] }; }),
+                 borderColor: css(COLORS[i]), borderWidth: 1.4, pointRadius: 0, tension: 0, order: 2 }];
+      if (showQ) s.push({ label: "Quarterly aggregate", data: data.filter(function (r) { return r[v.key + "_q"] !== null; }).map(function (r) { return { x: r.t, y: r[v.key + "_q"] }; }),
+                          borderColor: css("--text-muted"), borderWidth: 1.6, pointRadius: 2.5, pointBackgroundColor: css("--text-muted"), tension: 0, order: 1 });
+      if (showG) s.push(gdpSet(data));
+      var nc = nowcastOf(v.key);
+      if (nc && data.length && nc.t >= data[0].t) s.push({ label: "Nowcast", data: [{ x: nc.t, y: nc.y }], showLine: false, pointStyle: "rectRot",
+                                                          backgroundColor: css("--nowcast"), borderColor: css("--surface-1"), pointRadius: 7, pointBorderWidth: 1.5, order: -1 });
+      charts.push(new Chart(document.getElementById("c-" + v.key), { type: "line", data: { datasets: s }, options: axisOpts(ymin, ymax) }));
+    });
+  }
+
+  function buildSmalls() {
+    document.getElementById("smalls").innerHTML = meta.variants.map(function (v, i) {
+      return '<div class="card small"><h3><i class="sw" style="background:' + css(COLORS[i]) + ';margin-right:8px;vertical-align:middle"></i>' +
+             esc(v.label) + '</h3><p>' + esc(v.description) + '</p>' +
+             '<div class="chart-box"><canvas id="c-' + v.key + '" role="img" aria-label="' + esc(v.label) + ': weekly WAI, quarterly aggregate and GDP."></canvas></div>' +
+             '<div class="legend"><span><i class="sw" style="background:' + css(COLORS[i]) + '"></i>Weekly, annualised</span>' +
+             '<span><i class="sw" style="background:' + css("--text-muted") + '"></i>Quarterly aggregate</span>' +
+             '<span><i class="sw dot" style="background:' + css("--gdp") + '"></i>Published GDP</span>' +
+             '<span><i class="sw dia" style="background:' + css("--nowcast") + '"></i>Nowcast ' + esc(v.nowcast_quarter || "") + ": " + fmt(v.nowcast) + "%</span></div></div>";
+    }).join("");
+  }
+
+  function buildTable() {
+    var cols = meta.table_columns, V = meta.variants;
+    document.querySelector("#tbl thead").innerHTML = "<tr><th></th>" + V.map(function (v) { return "<th>" + esc(v.label) + "</th>"; }).join("") + "</tr>";
+    document.querySelector("#tbl tbody").innerHTML = cols.map(function (c) {
+      return "<tr><td>" + esc(c.label) + "</td>" + V.map(function (v) { return "<td>" + (v.figures[c.key] === undefined ? "–" : esc(v.figures[c.key])) + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    document.getElementById("tbl-note").textContent = meta.table_note || "";
+  }
+
+  // range control: buttons and a two-handle slider, shared by all charts
+  var lo = document.querySelector("#slider .rs-lo"), hi = document.querySelector("#slider .rs-hi");
+  function paint() {
+    if (!rows.length) return;
+    var a = +lo.value, b = +hi.value, max = Math.max(rows.length - 1, 1), f = document.querySelector("#slider .rs-fill");
+    f.style.left = "calc(8px + (100% - 16px) * " + (a / max) + ")";
+    f.style.width = "calc((100% - 16px) * " + ((b - a) / max) + ")";
+    document.getElementById("range-label").textContent = rows[a].date + " to " + rows[b].date;
+  }
+  function sync() {
+    var d = slice(); lo.max = hi.max = String(rows.length - 1);
+    lo.value = String(d.length ? rows.indexOf(d[0]) : 0); hi.value = String(d.length ? rows.indexOf(d[d.length - 1]) : rows.length - 1);
+    paint();
+  }
+  function moved(which) {
+    var a = +lo.value, b = +hi.value;
+    if (b - a < 1) { if (which === lo) { a = Math.min(a, rows.length - 2); b = a + 1; } else { b = Math.max(b, 1); a = b - 1; } lo.value = a; hi.value = b; }
+    st = { from: rows[a].t, to: rows[b].t };
+    document.querySelectorAll("#range-seg button").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+    paint(); draw();
+  }
+  lo.addEventListener("input", function () { moved(lo); });
+  hi.addEventListener("input", function () { moved(hi); });
+  document.getElementById("range-seg").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    st = b.dataset.since ? { since: +b.dataset.since } : b.dataset.months ? { months: +b.dataset.months } : { years: +b.dataset.years };
+    draw(); sync();
+  });
+  ["show-q", "show-gdp"].forEach(function (id) { document.getElementById(id).addEventListener("change", draw); });
+
+  var bust = new Date().toISOString().slice(0, 13);
+  Promise.all([fetch("compare/variants.json?v=" + bust).then(function (r) { if (!r.ok) throw new Error("variants.json: HTTP " + r.status); return r.json(); }),
+               fetch("compare/variants.csv?v=" + bust).then(function (r) { if (!r.ok) throw new Error("variants.csv: HTTP " + r.status); return r.text(); })])
+    .then(function (res) {
+      meta = res[0]; rows = parse(res[1]);
+      buildSmalls(); buildTable(); draw(); sync();
+    })
+    .catch(function (e) { var el = document.getElementById("err"); el.textContent = "The comparison data could not be loaded (" + e.message + ")."; el.style.display = "block"; });
+})();
+</script>
+</body>
+</html>
