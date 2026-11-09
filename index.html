@@ -1847,11 +1847,6 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
 
     // How much of the picture rests on a few series, across all indicators
     // whichever group is selected, and how the bars add up to the published WAI.
-    var abs = all.filter(function (r) { return r.group !== "GDP (target)"; })
-                 .map(function (r) { return Math.abs(r.value); })
-                 .sort(function (a, b) { return b - a; });
-    var totalAbs = abs.reduce(function (s, v) { return s + v; }, 0);
-    var top3 = totalAbs > 0 ? (abs[0] + abs[1] + abs[2]) / totalAbs * 100 : 0;
     var sum = all.reduce(function (s, r) { return s + r.value; }, 0);
     var byDate = {};
     contribRows.forEach(function (c) { byDate[c.date] = c; });
@@ -1862,11 +1857,9 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     var span = weeks.length === 1 ? "Week of " + weeks[0].date
              : "Average of the " + weeks.length + " weeks to " + weeks[weeks.length - 1].date;
     var hidden = picked.length - data.length;
-    document.getElementById("ind-caption").textContent = span + ". All indicators sum to " +
-      fmtSigned(sum, 2) + "; with the long-run average growth and the unexplained remainder (" + fmtSigned(other, 2) +
-      ") that is a WAI of " + fmt(sum + other, 2) + ". The three largest indicators, leaving out GDP, " +
-      "make up " + fmt(top3, 0) + "% of the absolute contributions." +
-      (hidden ? " " + hidden + " round to zero and are in the table only." : "");
+    document.getElementById("ind-caption").textContent = span + ": WAI of " + fmt(sum + other, 2) +
+      "%. Percentage points of annualised growth, relative to the average." +
+      (hidden ? " Indicators with no visible effect are listed in the table only." : "");
 
     document.getElementById("ind-chart").setAttribute("aria-label",
       "Horizontal bar chart of the contributions of " + data.length + " indicators, " + span +
