@@ -874,10 +874,12 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     // A diamond rather than a dot, larger than the GDP dots and ringed, so it is
     // told apart from them by shape as well as colour (in dark mode the two hues
     // are close), and its quarter and value are written in the legend.
-    var nc = nowcastPoint(v);
-    if (nc && data.length && nc.t >= data[0].t && nc.t <= data[data.length - 1].t) {
-      sets.push({ label: "Nowcast " + nc.quarter,
-                  data: [{ x: nc.t, y: nc.value }],
+    var ncs = nowcastPoints(v).filter(function (p) {
+      return data.length && p.t >= data[0].t && p.t <= data[data.length - 1].t;
+    });
+    if (ncs.length) {
+      sets.push({ label: "Nowcast " + ncs.map(function (p) { return p.quarter; }).join(", "),
+                  data: ncs.map(function (p) { return { x: p.t, y: p.value }; }),
                   showLine: false, borderColor: css("--surface-1"),
                   backgroundColor: css("--series-nowcast"), pointStyle: "rectRot",
                   pointRadius: 8, pointHoverRadius: 10, pointBorderWidth: 2, order: -1 });
@@ -885,16 +887,23 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     return sets;
   }
 
-  // The latest week carries the current quarter's value of the quarterly series
-  // (wai_qoq_q / wai_yoy_q) while that quarter is still running: the nowcast.
-  function nowcastPoint(v) {
-    if (!v.quarterly || !rows.length) return null;
-    var last = rows[rows.length - 1], value = last[v.quarterly];
-    if (value === null || value === undefined || isNaN(value)) return null;
-    if (v.gdp && last[v.gdp] !== null && last[v.gdp] !== undefined) return null;
-    var m = /^(\d{4})-(\d{2})/.exec(last.date);
-    var quarter = m ? m[1] + "Q" + (Math.floor((Number(m[2]) - 1) / 3) + 1) : last.date;
-    return { t: last.t, value: value, quarter: quarter };
+  // The nowcasts: every quarter the WAI covers whose GDP is not yet published.
+  // A quarter's value of the quarterly series (wai_qoq_q / wai_yoy_q) sits on its
+  // last week, and the running quarter's on the latest week. Between the end of a
+  // quarter and SECO's release there are two: the quarter just ended and the one
+  // running. Oldest first.
+  function nowcastPoints(v) {
+    if (!v.quarterly || !v.gdp || !rows.length) return [];
+    var lastGdp = -1, out = [];
+    rows.forEach(function (r, i) { if (r[v.gdp] !== null && r[v.gdp] !== undefined) lastGdp = i; });
+    for (var i = lastGdp + 1; i < rows.length; i++) {
+      var r = rows[i], value = r[v.quarterly];
+      if (value === null || value === undefined || isNaN(value)) continue;
+      var m = /^(\d{4})-(\d{2})/.exec(r.date);
+      var quarter = m ? m[1] + "Q" + (Math.floor((Number(m[2]) - 1) / 3) + 1) : r.date;
+      out.push({ t: r.t, value: value, quarter: quarter, date: r.date, running: i === rows.length - 1 });
+    }
+    return out;
   }
 
   function renderLegend() {
@@ -909,10 +918,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     if (state.gdp && v.gdp) {
       parts.push('<span><i class="swatch dot" style="background:' + css("--series-gdp") + '"></i>Published GDP</span>');
     }
-    var nc = nowcastPoint(v);
-    if (nc) {
+    var ncs = nowcastPoints(v);
+    if (ncs.length) {
       parts.push('<span><i class="swatch diamond" style="background:' + css("--series-nowcast") +
-                 '"></i>Nowcast ' + esc(nc.quarter) + ': ' + fmt(nc.value) + v.unit + '</span>');
+                 '"></i>Nowcast ' + ncs.map(function (p) { return esc(p.quarter) + ": " + fmt(p.value) + v.unit; }).join(", ") + '</span>');
     }
     document.getElementById("legend").innerHTML = parts.join("");
   }
@@ -948,8 +957,10 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
       if (state.gdp && v.gdp && data.some(function (r) { return r[v.gdp] !== null; })) {
         also.push("published GDP");
       }
-      var nc = nowcastPoint(v);
-      if (nc) also.push("the nowcast for " + nc.quarter + ", " + fmt(nc.value) + v.unit + ", as a red diamond");
+      var ncs = nowcastPoints(v);
+      if (ncs.length) also.push("the nowcast" + (ncs.length > 1 ? "s" : "") + " for " +
+        ncs.map(function (p) { return p.quarter + ", " + fmt(p.value) + v.unit; }).join(", and for ") +
+        (ncs.length > 1 ? ", as red diamonds" : ", as a red diamond"));
       parts = ["Line chart of " + v.label + ", weekly from " + first.date + " to " + last.date + ".",
                "Latest " + fmt(last[v.mean], d) + v.unit + ", ranging from " + fmt(lo, d) + v.unit +
                " to " + fmt(hi, d) + v.unit + " over that span."];
@@ -1045,22 +1056,26 @@ footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border
     // with GDP. The latest week's rate comes second: it is an instantaneous
     // weekly rate, annualised, and swings from week to week. Outside a running
     // quarter (its GDP already published) the first tile shows the latest
-    // quarter's WAI instead.
-    var nc = nowcastPoint(VIEWS.qoq);
+    // quarter's WAI instead. A quarter that has ended but whose GDP SECO has not
+    // yet published gets its own tile, before the running quarter's.
+    var ncs = nowcastPoints(VIEWS.qoq);
     var qrow = null;
     for (var i = rows.length - 1; i >= 0 && !qrow; i--) if (rows[i].wai_qoq_q !== null) qrow = rows[i];
-    var tiles = [
-      nc ? { label: "Nowcast " + nc.quarter + ", QoQ annualised", value: fmt(nc.value) + "%",
-             note: "quarter-on-quarter, as GDP is measured; from data to " + last.date }
-         : { label: "WAI, latest quarter, QoQ annualised", value: qrow ? fmt(qrow.wai_qoq_q) + "%" : "–",
-             note: qrow ? "quarter ending " + qrow.date : "" },
+    var ncTiles = ncs.map(function (p) {
+      return { label: "Nowcast " + p.quarter + ", QoQ annualised", value: fmt(p.value) + "%",
+               note: p.running ? "quarter running; from data to " + last.date
+                               : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date };
+    });
+    var tiles = (ncTiles.length ? ncTiles
+      : [{ label: "WAI, latest quarter, QoQ annualised", value: qrow ? fmt(qrow.wai_qoq_q) + "%" : "–",
+           note: qrow ? "quarter ending " + qrow.date : "" }]).concat([
       { label: "Latest week, annualised", value: fmt(last.wai_qoq) + "%",
         note: "week ending " + last.date + ", 95% band " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) },
       { label: "WAI, year-over-year", value: fmt(last.wai_yoy) + "%",
         note: yearAgoStr ? yearAgoStr + " to " + last.date : "12 months to " + last.date },
       { label: "Level index", value: fmt(last.wai_index, 1),
         note: "at " + last.date + ", 2019Q4 = 100; weekly from " + first.date }
-    ];
+    ]);
     document.getElementById("stats").innerHTML = tiles.map(function (t) {
       return '<div class="stat"><div class="stat-label">' + t.label + '</div>' +
              '<div class="stat-value">' + t.value + '</div>' +

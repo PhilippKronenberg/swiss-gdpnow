@@ -21,6 +21,11 @@ published.
 
 ## 2026-11-09
 
+- **Presentation** — Between the end of a quarter and SECO's GDP release, the
+  dashboard shows two nowcasts: the quarter just ended (first tile) and the quarter
+  running (second tile), each also as a diamond in the growth chart. Until now only
+  the running quarter's was shown, although the WAI's figure for the quarter just
+  ended had been in `wai_data.csv` all along. The numbers did not change.
 - **Presentation** — The range buttons (1m to 5y, 2015, 2020) on the growth chart
   start at the last week of the quarter before the period, so the quarterly WAI
   and GDP of that quarter are shown and the quarterly line no longer begins in the
