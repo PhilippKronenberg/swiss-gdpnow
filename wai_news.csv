@@ -1,8 +1,10 @@
 component,impact
-Alternative,0.001
-Financial,-7e-04
-Retail,0
+Output and production,-0.0171
+Labour market,-0.0131
+Financial markets,-0.0112
+Consumption,-0.0026
+Mobility,-0.0012
+International trade,-3e-04
+Prices,1e-04
+Money and interest rates,1e-04
 GDP (target),0
-Trade,0
-Prices,0
-Survey,0
