@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Philipp Kronenberg">
 <title>Weekly Activity Index (WAI)</title>
 <meta name="description" content="The Weekly Activity Index (WAI) — a high-frequency indicator of Swiss GDP growth, estimated with a mixed-frequency Bayesian dynamic factor model. Kronenberg (2026).">
 
@@ -218,7 +219,8 @@ header .wrap { padding: 0 20px; }
 .titlebar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 h1 { font-size: 2.05rem; font-weight: 650; letter-spacing: -0.02em; color: var(--on-brand); }
 .subtitle { color: var(--on-brand-soft); font-size: 1.05rem; margin-top: 6px; }
-.asof { color: var(--on-brand-muted); font-size: 0.9rem; margin-top: 12px; }
+.asof { color: var(--on-brand-muted); font-size: 0.9rem; margin-top: 4px; }
+.byline { color: var(--on-brand-soft); font-size: 0.95rem; margin-top: 10px; font-weight: 600; }
 
 /* The theme toggle sits on the brand band, so it cannot use the surface tokens
    the other buttons use -- they would give a light button on a dark green bar. */
@@ -371,6 +373,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     <div>
       <h1>Weekly Activity Index</h1>
       <p class="subtitle">A high-frequency indicator of Swiss GDP growth, estimated with a mixed-frequency Bayesian dynamic factor model. The factor is anchored to GDP, so it reads directly as a GDP growth rate.</p>
+      <p class="byline">By Philipp Kronenberg</p>
       <p class="asof" id="asof">Loading…</p>
     </div>
     <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch colour theme">Theme</button>
@@ -678,6 +681,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 </main>
 
 <footer>
+  © 2026 Philipp Kronenberg ·
   <span id="foot-meta"></span> ·
   Data <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, code
   <a href="https://github.com/PhilippKronenberg/wai-website/blob/main/LICENSE">MIT</a> ·
