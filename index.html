@@ -447,7 +447,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </div>
   <label class="check"><input type="checkbox" id="show-band" checked> 95% band</label>
   <label class="check"><input type="checkbox" id="show-gdp" checked> Published GDP</label>
-  <label class="check"><input type="checkbox" id="show-waiq" checked> Swiss GDPNow, quarterly</label>
+  <label class="check"><input type="checkbox" id="show-waiq" checked> Weekly Nowcast, quarterly</label>
   <label class="check" id="show-fc-label" hidden><input type="checkbox" id="show-fc" checked> Forecast</label>
   <label class="check"><input type="checkbox" id="show-table"> Data table</label>
   <div class="range-row">
@@ -728,18 +728,18 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   "use strict";
 
   var VIEWS = {
-    qoq:   { label: "Swiss GDPNow, quarter-on-quarter growth, annualised",
+    qoq:   { label: "Weekly Nowcast QoQ (annualised)",
              unit: "%", mean: "wai_qoq", lo: "wai_qoq_lo", hi: "wai_qoq_hi",
              gdp: "gdp_qoq", quarterly: "wai_qoq_q" },
     // Not annualised: the quarter-on-quarter rate as SECO reports GDP, derived in
     // addNotAnnualised() from the annualised columns.
-    qoqq:  { label: "Swiss GDPNow, quarter-on-quarter growth, not annualised",
+    qoqq:  { label: "Weekly Nowcast QoQ",
              unit: "%", mean: "wai_qoq_notann", lo: "wai_qoq_lo_notann", hi: "wai_qoq_hi_notann",
              gdp: "gdp_qoq_notann", quarterly: "wai_qoq_q_notann" },
-    yoy:   { label: "Swiss GDPNow, year-over-year growth",
+    yoy:   { label: "Weekly Nowcast YoY",
              unit: "%", mean: "wai_yoy", lo: null, hi: null,
              gdp: "gdp_yoy", quarterly: "wai_yoy_q" },
-    index: { label: "Swiss GDPNow level index (2019Q4 = 100)",
+    index: { label: "Weekly Nowcast Level index (2019Q4 = 100)",
              unit: "", mean: "wai_index", lo: null, hi: null,
              gdp: "gdp_index", quarterly: null }
   };
@@ -963,7 +963,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     }
 
     if (state.waiq && v.quarterly && data.some(function (r) { return r[v.quarterly] !== null; })) {
-      sets.push({ label: "Swiss GDPNow, aggregated to quarterly",
+      sets.push({ label: "Weekly Nowcast, aggregated to quarterly",
                   data: data.filter(function (r) { return r[v.quarterly] !== null; })
                             .map(function (r) { return { x: r.t, y: r[v.quarterly] }; }),
                   borderColor: css("--series-waiq"), backgroundColor: css("--series-waiq"),
@@ -1054,12 +1054,12 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 
   function renderLegend() {
     var v = VIEWS[state.view], parts = [];
-    parts.push('<span><i class="swatch" style="background:' + css("--series-wai") + '"></i>Swiss GDPNow</span>');
+    parts.push('<span><i class="swatch" style="background:' + css("--series-wai") + '"></i>' + esc(v.label) + '</span>');
     if (state.band && v.lo) {
       parts.push('<span><i class="swatch band" style="background:' + css("--series-wai-band") + '"></i>95% credible band</span>');
     }
     if (state.waiq && v.quarterly) {
-      parts.push('<span><i class="swatch" style="background:' + css("--series-waiq") + '"></i>Swiss GDPNow, aggregated to quarterly</span>');
+      parts.push('<span><i class="swatch" style="background:' + css("--series-waiq") + '"></i>Weekly Nowcast, aggregated to quarterly</span>');
     }
     if (state.gdp && v.gdp) {
       parts.push('<span><i class="swatch dot" style="background:' + css("--series-gdp") + '"></i>Published GDP</span>');
@@ -1173,14 +1173,14 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
             // week starts the dashed forecast too; it is listed once, as observed.
             filter: function (item, i, items) {
               var l = item.dataset.label;
-              if (l === "lo" || /credible band$/.test(l) || l === "Swiss GDPNow, aggregated to quarterly") return false;
+              if (l === "lo" || /credible band$/.test(l) || l === "Weekly Nowcast, aggregated to quarterly") return false;
               if (l === "Forecast") return !items.some(function (o) { return o.dataset.label === v.label; });
               return item.parsed.y !== null && item.parsed.y !== undefined;
             },
             callbacks: {
               label: function (item) {
                 var l = item.dataset.label;
-                var name = l === v.label ? "Swiss GDPNow" : l;
+                var name = l;
                 return name + ": " + qoqText(state.view, item.parsed.y);
               }
             }
@@ -1195,7 +1195,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 
   function renderTable(data) {
     var v = VIEWS[state.view];
-    var cols = [["date", "Date"], [v.mean, "Swiss GDPNow"]];
+    var cols = [["date", "Date"], [v.mean, "Weekly Nowcast"]];
     if (v.lo) { cols.push([v.lo, "Lower 95%"]); cols.push([v.hi, "Upper 95%"]); }
     if (v.gdp) cols.push([v.gdp, "GDP"]);
 
@@ -1370,7 +1370,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
              esc(st.label) + "</span>";
     });
     parts.push('<span><i class="swatch" style="background:' + css("--text-primary") +
-               '"></i>Swiss GDPNow (the average plus the bars)</span>');
+               '"></i>Weekly Nowcast QoQ (annualised), the average plus the bars</span>');
     parts.push('<span><i class="swatch" style="background:repeating-linear-gradient(90deg,' +
                css("--text-muted") + ' 0 5px,transparent 5px 9px)"></i>Average growth, ' +
                fmt(contribAverage()) + '%</span>');
@@ -1468,7 +1468,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     // component colour, and a dark line is what a reader expects a stacked
     // chart's total to be.
     sets.push({
-      type: "line", label: "Swiss GDPNow", isTotal: true,
+      type: "line", label: "Weekly Nowcast QoQ (annualised)", isTotal: true,
       data: data.map(function (r) { return r.wai; }),
       borderColor: css("--text-primary"), borderWidth: 1.5,
       pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: css("--text-primary"),
@@ -1529,7 +1529,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                 if (!r) return "";
                 return "Average " + fmt(r.trend) + " " + (r.total < 0 ? "− " : "+ ") +
                        fmt(Math.abs(r.total)) + " = " + fmt(r.trend + r.total) +
-                       " · published Swiss GDPNow " + fmt(r.wai);
+                       " · weekly nowcast " + fmt(r.wai);
               }
             }
           }
