@@ -1214,13 +1214,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     var last = rows[rows.length - 1];
     var first = rows[0];
 
-    // Every tile states the date or span it refers to. Without that the figures
-    // read as "now", when they are as of the latest weekly observation -- and
-    // the two growth measures cover quite different windows, which the numbers
-    // alone do not reveal.
-    var yearAgo = new Date(last.t);
-    yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
-    var yearAgoStr = isFinite(yearAgo.getTime()) ? yearAgo.toISOString().slice(0, 10) : null;
+    // The tiles leave out the latest data date: the header already states it.
 
     // The headline is the nowcast, the quarter-on-quarter figure that compares
     // with GDP. The latest week's rate comes second: it is an instantaneous
@@ -1242,8 +1236,8 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       return { label: "Nowcast " + p.quarter + ", " + p.weeks + " of " + wpq + " weeks, QoQ (annualised)",
                value: qv(p.value),
                note: p.running ? "quarter to date: the " + p.weeks + " week" + (p.weeks === 1 ? "" : "s") +
-                                 " observed so far; data to " + last.date
-                               : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date };
+                                 " observed so far"
+                               : "quarter ended " + p.date + ", GDP not yet published" };
     });
     // The forecast's quarter, whole: the running one completed.
     ncTiles = ncTiles.concat(forecastPoints(VIEWS.qoq).map(function (p) {
@@ -1255,12 +1249,12 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       : [{ label: "Swiss GDPNow, latest quarter, QoQ (annualised)", value: qrow ? qv(qrow.wai_qoq_q) : "–",
            note: qrow ? "quarter ending " + qrow.date : "" }]).concat([
       { label: "Latest week, QoQ (annualised)", value: qv(last.wai_qoq),
-        note: "week ending " + last.date + ", 95% band " + fmt(last.wai_qoq_lo_notann) + " to " +
+        note: "95% band " + fmt(last.wai_qoq_lo_notann) + " to " +
               fmt(last.wai_qoq_hi_notann) + " (ann. " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) + ")" },
       { label: "Swiss GDPNow, year-over-year", value: fmt(last.wai_yoy) + "%",
-        note: yearAgoStr ? yearAgoStr + " to " + last.date : "12 months to " + last.date },
+        note: "growth over the last 12 months" },
       { label: "Level index", value: fmt(last.wai_index, 1),
-        note: "at " + last.date + ", 2019Q4 = 100; weekly from " + first.date }
+        note: "2019Q4 = 100; weekly from " + first.date }
     ]);
     document.getElementById("stats").innerHTML = tiles.map(function (t) {
       return '<div class="stat"><div class="stat-label">' + t.label + '</div>' +
