@@ -3,8 +3,8 @@
 // Validates wai_data.csv against wai_meta.json, against itself, and against
 // what index.html actually reads. It also validates the additive "measures"
 // files -- wai_contributions.csv, wai_news.csv, wai_series.csv and
-// wai_measures_meta.json -- when they are present, chiefly the identity that
-// per date the contributions sum to wai_qoq.
+// wai_measures_meta.json -- and the forecast, wai_forecast.csv, when they are
+// present, chiefly the identity that per date the contributions sum to wai_qoq.
 //
 // Zero dependencies, deliberately. This repository has no build step and no
 // node_modules, and CI should not be the thing that introduces one. Everything
@@ -283,6 +283,65 @@ function readFlatCsv(path, expectedHeader) {
   });
   if (ragged > 5) fail(`${path}: ${ragged - 5} further rows have the wrong field count.`);
   return ragged > 0 ? null : { header: head, rows: body };
+}
+
+// ------------------------------------------------------------ wai_forecast.csv
+//
+// The model's forecast past the data, to the end of the quarter after the
+// running one. Additive like the measures files: absent is valid. What would go
+// wrong silently is a forecast that overlaps the data, a band that does not
+// bracket it, or a whole-quarter value sitting on a week that does not end a
+// quarter -- the page would draw all three without complaint.
+
+const FORECAST = "wai_forecast.csv";
+const FORECAST_HEADER = ["date", "wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_yoy",
+                         "wai_index", "wai_qoq_q", "wai_yoy_q"];
+const quarterKey = (d) => `${d.slice(0, 4)}Q${Math.floor((Number(d.slice(5, 7)) - 1) / 3) + 1}`;
+const endsQuarter = (d) => ["03", "06", "09", "12"].includes(d.slice(5, 7)) && d.slice(8, 10) === "28";
+
+if (dateIdx !== -1 && rows.length > 0 && meta.weeks_observed !== undefined) {
+  const lastDate = rows[rows.length - 1][dateIdx];
+  const inQuarter = rows.filter((r) => quarterKey(r[dateIdx]) === quarterKey(lastDate)).length;
+  if (meta.weeks_observed !== inQuarter) {
+    fail(`wai_meta.json weeks_observed=${meta.weeks_observed} but wai_data.csv has ${inQuarter} `
+      + `weeks of ${quarterKey(lastDate)}. The page labels the nowcast with this count.`);
+  }
+}
+
+if (existsSync(FORECAST)) {
+  const f = readFlatCsv(FORECAST, Array.isArray(meta.forecast_columns) ? meta.forecast_columns : FORECAST_HEADER);
+  if (f) {
+    const col = (name) => f.header.indexOf(name);
+    const fd = f.rows.map((r) => r[col("date")]);
+    const lastData = rows.length ? rows[rows.length - 1][dateIdx] : null;
+    if (fd.some((d) => !DATE_RE.test(d))) fail(`${FORECAST} has a date that is not YYYY-MM-DD.`);
+    for (let i = 1; i < fd.length; i++) {
+      if (!(fd[i] > fd[i - 1])) { fail(`${FORECAST} dates are not strictly ascending at row ${i + 2}.`); break; }
+    }
+    if (fd.length === 0) fail(`${FORECAST} has no rows.`);
+    if (lastData && fd.length && !(fd[0] > lastData)) {
+      fail(`${FORECAST} starts at ${fd[0]}, not after wai_data.csv's last week ${lastData}. `
+        + `The forecast must never overlap the data.`);
+    }
+    if (meta.forecast_end !== undefined && meta.forecast_end !== null && fd.length
+        && meta.forecast_end !== fd[fd.length - 1]) {
+      fail(`wai_meta.json forecast_end="${meta.forecast_end}" but ${FORECAST} ends at "${fd[fd.length - 1]}".`);
+    }
+    const [m, lo, hi] = ["wai_qoq", "wai_qoq_lo", "wai_qoq_hi"].map(col);
+    let bad = 0;
+    f.rows.forEach((r) => {
+      if (r[m] === "" || !(num(r[lo]) < num(r[m]) && num(r[m]) < num(r[hi]))) bad++;
+    });
+    if (bad) fail(`${FORECAST}: ${bad} rows where the 95% band does not bracket wai_qoq, or wai_qoq is missing.`);
+    const q = col("wai_qoq_q");
+    const placed = f.rows.filter((r) => r[q] !== "");
+    if (placed.some((r) => !endsQuarter(r[col("date")]))) {
+      fail(`${FORECAST} has a whole-quarter wai_qoq_q on a week that does not end a quarter.`);
+    }
+    if (!placed.length) fail(`${FORECAST} carries no whole-quarter wai_qoq_q.`);
+  }
+} else if (meta.forecast_end) {
+  fail(`wai_meta.json has forecast_end="${meta.forecast_end}" but ${FORECAST} is missing.`);
 }
 
 const MEASURES_META = "wai_measures_meta.json";
