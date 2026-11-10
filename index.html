@@ -510,6 +510,21 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 
   <section class="controls" aria-label="Contributions chart controls">
     <div class="ctl-group">
+      <span class="ctl-label" id="lbl-cview">View</span>
+      <div class="seg" role="group" aria-labelledby="lbl-cview" id="contrib-view-seg">
+        <button type="button" data-cview="qoq" aria-pressed="true">QoQ annualised</button>
+        <button type="button" data-cview="qoqq" aria-pressed="false">QoQ</button>
+        <button type="button" data-cview="yoy" aria-pressed="false">YoY growth</button>
+      </div>
+    </div>
+    <div class="ctl-group">
+      <span class="ctl-label" id="lbl-cfreq">Frequency</span>
+      <div class="seg" role="group" aria-labelledby="lbl-cfreq" id="contrib-freq-seg">
+        <button type="button" data-cfreq="w" aria-pressed="true">Weekly</button>
+        <button type="button" data-cfreq="q" aria-pressed="false">Quarterly</button>
+      </div>
+    </div>
+    <div class="ctl-group">
       <span class="ctl-label" id="lbl-crange">Range</span>
       <div class="seg" role="group" aria-labelledby="lbl-crange" id="contrib-range-seg">
         <button type="button" data-months="1" aria-pressed="false">1m</button>
@@ -549,7 +564,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </section>
 
   <p class="caption" id="contrib-caption"></p>
-  <p class="explain"><strong>Reading the contributions panel.</strong> In every week, the long-run average growth plus the bars gives exactly that week's growth rate, so the bars show why growth was above or below its average. Nine bars are groups of indicators, one of them published GDP itself. The grey bar, the <em>unexplained remainder</em>, is the part that cannot be assigned to a group, mainly estimation uncertainty. It is small in quiet periods and larger in volatile ones.</p>
+  <p class="explain"><strong>Reading the contributions panel.</strong> In every week, the long-run average growth plus the bars gives exactly that week's growth rate, so the bars show why growth was above or below its average. The same holds for the other views: QoQ not annualised, YoY, and the quarterly values, which compare quarterly averages as GDP is measured. Nine bars are groups of indicators, one of them published GDP itself. The grey bar, the <em>unexplained remainder</em>, is the part that cannot be assigned to a group, mainly estimation uncertainty. It is small in quiet periods and larger in volatile ones.</p>
 
   <div class="tablewrap" id="contrib-tablewrap" hidden>
     <table id="contrib-table"><thead></thead><tbody></tbody></table>
@@ -770,7 +785,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                     "Labour market", "Money and interest rates", "parameter_uncertainty"];
 
   var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true, fc: true };
-  var cstate = { years: 5, since: null };
+  var cstate = { years: 5, since: null, view: "qoq", freq: "w" };
   var rows = [], meta = null, chart = null;
   // wai_forecast.csv: the weeks past the data, as the model forecasts them, to the
   // end of the running quarter. Additive: empty when the file is
@@ -1319,10 +1334,110 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     });
   }
 
-  // The average the chart measures deviations from: the trend component, which
-  // is the same in every week. Read from the latest week.
+  // --- the contributions in other measures ---------------------------------
+  //
+  // The file decomposes the weekly annualised QoQ rate A = trend + sum of the
+  // bars. A week's growth in logs is l = ln(1 + A/100) / 48; each bar gets the
+  // share of l - lT (lT the trend's) that it has of A - trend, so the bars'
+  // logs add up exactly. Logs add over time: a year's growth is the sum of 48
+  // weeks, a quarter-average's growth the difference of mean cumulated logs.
+  // Each point is then mapped onto the published figure (wai_data.csv) the
+  // way the export maps the weekly rate: the average's own growth, plus the
+  // remainder shared in proportion to each bar's log contribution, so the bars
+  // add up exactly to the line. The split is a convention, as for the weekly bars.
+  var CVIEW = {
+    qoq:  { short: "QoQ (annualised)", axis: "QoQ growth, annualised", wk: "wai_qoq", q: "wai_qoq_q",
+            weekly: function (l) { return (Math.exp(48 * l) - 1) * 100; },
+            quarterly: function (L) { return (Math.exp(4 * L) - 1) * 100; } },
+    qoqq: { short: "QoQ", axis: "QoQ growth", wk: "wai_qoq_notann", q: "wai_qoq_q_notann",
+            weekly: function (l) { return (Math.exp(12 * l) - 1) * 100; },
+            quarterly: function (L) { return (Math.exp(L) - 1) * 100; } },
+    yoy:  { short: "YoY", axis: "YoY growth", wk: "wai_yoy", q: "wai_yoy_q",
+            weekly: function (L) { return (Math.exp(L) - 1) * 100; },
+            quarterly: function (L) { return (Math.exp(L) - 1) * 100; } }
+  };
+  var contribLogs = null, contribViewCache = null;
+  function buildContribLogs(comps) {
+    var lw = {}, cum = {}, acc = {}, cumT = [], aT = 0, lT = [];
+    comps.forEach(function (n) { lw[n] = []; cum[n] = []; acc[n] = 0; });
+    contribRows.forEach(function (r) {
+      var T = r.trend, A = T + r.total;
+      var lt = Math.log(1 + T / 100) / 48, l = Math.log(1 + A / 100) / 48;
+      var k = Math.abs(A - T) > 1e-9 ? (l - lt) / (A - T) : 1 / (48 * (100 + A));
+      aT += lt; lT.push(lt); cumT.push(aT);
+      comps.forEach(function (n) {
+        var v = r.values[n], x = (v === null || v === undefined || isNaN(v)) ? 0 : v * k;
+        acc[n] += x; lw[n].push(x); cum[n].push(acc[n]);
+      });
+    });
+    return { lw: lw, cum: cum, lT: lT, cumT: cumT };
+  }
+  // A point from its bars' logs Lc, the average's log LT, the transform g and
+  // the published value P (null: g of the logs themselves).
+  function contribPoint(src, comps, Lc, LT, g, P) {
+    var S = 0;
+    comps.forEach(function (n) { S += Lc[n]; });
+    var trend = g(LT), wai = (P === null || P === undefined || isNaN(P)) ? g(LT + S) : P;
+    var D = wai - trend, values = {}, total = 0;
+    comps.forEach(function (n) {
+      values[n] = Math.abs(S) > 1e-12 ? D * Lc[n] / S : (n === "parameter_uncertainty" ? D : 0);
+      total += values[n];
+    });
+    return { date: src.date, t: src.t, values: values, total: total, trend: trend, wai: wai, dev: wai - trend };
+  }
+  function contribView() {
+    if (contribViewCache) return contribViewCache;
+    if (cstate.view === "qoq" && cstate.freq === "w") return (contribViewCache = contribRows);
+    var comps = contribComponents(), cv = CVIEW[cstate.view], out = [];
+    if (!contribLogs) contribLogs = buildContribLogs(comps);
+    var lg = contribLogs, byDate = {};
+    rows.forEach(function (r) { byDate[r.date] = r; });
+    if (cstate.freq === "w") {
+      contribRows.forEach(function (r, w) {
+        var Lc = {}, LT;
+        if (cstate.view === "yoy") {
+          if (w < 48) return;
+          comps.forEach(function (n) { Lc[n] = lg.cum[n][w] - lg.cum[n][w - 48]; });
+          LT = lg.cumT[w] - lg.cumT[w - 48];
+        } else {
+          comps.forEach(function (n) { Lc[n] = lg.lw[n][w]; });
+          LT = lg.lT[w];
+        }
+        var p = byDate[r.date];
+        out.push(contribPoint(r, comps, Lc, LT, cv.weekly, p ? p[cv.wk] : null));
+      });
+    } else {
+      var weeksOf = {};
+      contribRows.forEach(function (r, w) { (weeksOf[quarterOf(r.date)] = weeksOf[quarterOf(r.date)] || []).push(w); });
+      var meanOf = function (arr, ws) { var s = 0; ws.forEach(function (w) { s += arr[w]; }); return s / ws.length; };
+      var before = function (q, back) {
+        var y = Number(q.slice(0, 4)), n = Number(q.slice(5)) - back;
+        while (n < 1) { n += 4; y--; }
+        return y + "Q" + n;
+      };
+      contribRows.forEach(function (r, w) {
+        var p = byDate[r.date];
+        if (!p || p[cv.q] === null || p[cv.q] === undefined || isNaN(p[cv.q])) return;
+        var q = quarterOf(r.date), prev = weeksOf[before(q, cstate.view === "yoy" ? 4 : 1)];
+        if (!prev) return;
+        var cur = weeksOf[q].filter(function (x) { return x <= w; }), Lc = {};
+        comps.forEach(function (n) { Lc[n] = meanOf(lg.cum[n], cur) - meanOf(lg.cum[n], prev); });
+        out.push(contribPoint(r, comps, Lc, meanOf(lg.cumT, cur) - meanOf(lg.cumT, prev), cv.quarterly, p[cv.q]));
+      });
+    }
+    return (contribViewCache = out);
+  }
+  function contribLineLabel() {
+    var cv = CVIEW[cstate.view];
+    return cstate.freq === "q" ? "Weekly Nowcast, aggregated to quarterly, " + cv.short : "Weekly Nowcast " + cv.short;
+  }
+
+  // The average the chart measures deviations from: the trend component, the
+  // same in every week (in a quarterly view, every full quarter). Read from the
+  // latest point.
   function contribAverage() {
-    return contribRows.length ? contribRows[contribRows.length - 1].trend : 0;
+    var d = contribRows.length ? contribView() : [];
+    return d.length ? d[d.length - 1].trend : 0;
   }
 
   function compStyle(name) {
@@ -1366,7 +1481,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
              esc(st.label) + "</span>";
     });
     parts.push('<span><i class="swatch" style="background:' + css("--text-primary") +
-               '"></i>Weekly Nowcast QoQ (annualised), the average plus the bars</span>');
+               '"></i>' + esc(contribLineLabel()) + ', the average plus the bars</span>');
     parts.push('<span><i class="swatch" style="background:repeating-linear-gradient(90deg,' +
                css("--text-muted") + ' 0 5px,transparent 5px 9px)"></i>Average growth, ' +
                fmt(contribAverage()) + '%</span>');
@@ -1387,11 +1502,11 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
         return c.name + " " + fmt(c.v) + " points";
       }).join(", ");
       parts = [
-        "Stacked bar chart of Swiss GDPNow's annualised quarter-on-quarter growth, weekly from " +
+        "Stacked bar chart of " + contribLineLabel() + ", from " +
         first.date + " to " + last.date + ": " + comps.length + " contributions stacked on " +
         "the long-run average growth of " + fmt(contribAverage()) + "%, drawn as a dashed line.",
-        "The average plus each week's bars is the Swiss GDPNow line drawn over them.",
-        "In the week ending " + last.date + " Swiss GDPNow is " + fmt(last.wai) +
+        "The average plus each point's bars is the line drawn over them.",
+        "At " + last.date + " it is " + fmt(last.wai) +
         "%, " + fmtSigned(last.dev, 2) + " points from average, of which the largest contributions are " + named +
         (ranked.length > 3 ? ", with " + (ranked.length - 3) + " smaller ones." : "."),
         "Every figure is available as text from the Contributions table checkbox above."
@@ -1403,7 +1518,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   function renderContribTable(data, comps) {
     var tail = data.slice(-12);
     var heads = ["Date"].concat(comps.map(function (n) { return compStyle(n).label; }))
-                        .concat(["Sum", "Average", "Swiss GDPNow"]);
+                        .concat(["Sum", "Average", contribLineLabel()]);
     document.querySelector("#contrib-table thead").innerHTML =
       "<tr>" + heads.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr>";
     document.querySelector("#contrib-table tbody").innerHTML = tail.map(function (r) {
@@ -1417,15 +1532,15 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       return "<tr>" + cells.join("") + "</tr>";
     }).join("");
     document.getElementById("contrib-table-note").textContent =
-      "Last " + tail.length + " of " + data.length + " weeks in the selected range, in " +
-      "percentage points of Swiss GDPNow's annualised quarter-on-quarter growth. " +
-      "Sum is the contributions added up; Average plus Sum is Swiss GDPNow, the published " +
+      "Last " + tail.length + " of " + data.length + (cstate.freq === "q" ? " quarters" : " weeks") + " in the selected range, in " +
+      "percentage points of " + contribLineLabel() + ". " +
+      "Sum is the contributions added up; Average plus Sum is the published " +
       "figure they decompose. " +
       "Use the download button for every week and component.";
   }
 
   function renderContrib() {
-    var data = sliceRange(contribRows, cstate), comps = contribComponents();
+    var data = sliceRange(contribView(), cstate), comps = contribComponents(), quarterly = cstate.freq === "q";
     var labels = data.map(function (r) { return r.date; });
     if (contribChart) { contribChart.destroy(); contribChart = null; }
 
@@ -1457,14 +1572,14 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
         backgroundColor: css(st.token), borderWidth: 0,
         // Weekly bars with the default gaps read as stripes rather than as the
         // area they are; full width makes the stack continuous.
-        categoryPercentage: 1, barPercentage: 1, grouped: false, order: 2
+        categoryPercentage: quarterly ? 0.85 : 1, barPercentage: 1, grouped: false, order: 2
       };
     });
     // Near-black rather than --series-wai: the blue is already spoken for by a
     // component colour, and a dark line is what a reader expects a stacked
     // chart's total to be.
     sets.push({
-      type: "line", label: "Weekly Nowcast QoQ (annualised)", isTotal: true,
+      type: "line", label: contribLineLabel(), isTotal: true,
       data: data.map(function (r) { return r.wai; }),
       borderColor: css("--text-primary"), borderWidth: 1.5,
       pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: css("--text-primary"),
@@ -1492,14 +1607,14 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                         callback: function (value) {
                           var lab = (typeof value === "number" && this.getLabelForValue)
                             ? this.getLabelForValue(value) : value;
-                          return monthLabel(lab);
+                          return quarterly ? quarterOf(lab) : monthLabel(lab);
                         } } },
           y: { stacked: false, grid: { color: css("--grid"), drawTicks: false },
                border: { display: false },
                ticks: { color: css("--text-secondary"),
                         callback: function (val) { return val + "%"; } },
                title: { display: true,
-                        text: "QoQ growth, annualised",
+                        text: CVIEW[cstate.view].axis,
                         color: css("--text-muted"), font: { size: 11 } } }
         },
         plugins: {
@@ -1510,6 +1625,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
             borderColor: css("--border"), borderWidth: 1,
             padding: 10, displayColors: true, cornerRadius: 6,
             callbacks: {
+              title: function (items) {
+                return items.length ? (quarterly ? quarterOf(items[0].label) + " (to " + items[0].label + ")" : items[0].label) : "";
+              },
               // A bar's value is its contribution, not where its segment ends.
               label: function (item) {
                 var ds = item.dataset, v;
@@ -1525,7 +1643,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                 if (!r) return "";
                 return "Average " + fmt(r.trend) + " " + (r.total < 0 ? "− " : "+ ") +
                        fmt(Math.abs(r.total)) + " = " + fmt(r.trend + r.total) +
-                       " · weekly nowcast " + fmt(r.wai);
+                       " · published " + fmt(r.wai);
               }
             }
           }
@@ -1535,6 +1653,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     renderContribLegend(comps);
     describeContrib(data, comps);
     renderContribTable(data, comps);
+    var all = contribView();
+    document.getElementById("contrib-caption").textContent =
+      "Contributions are measured in percentage points of " + contribLineLabel() +
+      ", stacked on the long-run average of " + fmt(contribAverage()) +
+      "% (GDP's average growth over the estimation sample, which the model's standardised " +
+      "data leave out and the published scale adds back). " + all.length.toLocaleString() +
+      (quarterly ? " quarters" : " weeks") + " × " + comps.length + " components.";
   }
 
   // Fetched separately from wai_data.csv and failing separately. The measures
@@ -1558,15 +1683,6 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
         contribRows = parseContrib(text);
         if (!contribRows.length) throw new Error("wai_contributions.csv contains no rows");
         attachWai();
-
-        var unit = (measMeta && measMeta.contributions_unit) ||
-          "percentage points of wai_qoq (annualised quarter-on-quarter growth, %)";
-        document.getElementById("contrib-caption").textContent =
-          "Contributions are measured in " + unit + ", stacked on the long-run average of " +
-          fmt(contribAverage()) + "% (GDP's average growth over the estimation sample, which " +
-          "the model's standardised data leave out and the published scale adds back). " +
-          contribRows.length.toLocaleString() + " weeks × " +
-          contribComponents().length + " components, data to " + rows[rows.length - 1].date + ".";
 
         panel.hidden = false;   // before the draw: a hidden canvas has no size
         renderContrib();
@@ -2288,10 +2404,20 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   var syncMainSlider = rangeSlider("range-slider", "range-seg", state,
     function () { return rows; }, function () { render(); });
   var syncContribSlider = rangeSlider("contrib-range-slider", "contrib-range-seg", cstate,
-    function () { return contribRows; }, function () { if (contribRows.length) renderContrib(); });
+    function () { return contribRows.length ? contribView() : []; }, function () { if (contribRows.length) renderContrib(); });
 
   segHandler("view-seg", function (btn) { state.view = btn.dataset.view; });
   segHandler("range-seg", applyRange(state), function () { render(); syncMainSlider(); });
+  // A new measure or frequency is a new series of points: the slider's indices
+  // refer to the old one, so a range picked on it is dropped for the button's.
+  function contribRedraw() {
+    contribViewCache = null;
+    if (cstate.from !== undefined && cstate.from !== null) { cstate.from = cstate.to = null; cstate.years = 5; cstate.since = cstate.months = null;
+      document.querySelectorAll("#contrib-range-seg button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.years === "5")); }); }
+    if (contribRows.length) { renderContrib(); syncContribSlider(); }
+  }
+  segHandler("contrib-view-seg", function (btn) { cstate.view = btn.dataset.cview; }, contribRedraw);
+  segHandler("contrib-freq-seg", function (btn) { cstate.freq = btn.dataset.cfreq; }, contribRedraw);
   segHandler("contrib-range-seg", applyRange(cstate), function () {
     if (contribRows.length) { renderContrib(); syncContribSlider(); }
   });
