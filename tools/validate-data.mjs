@@ -538,6 +538,62 @@ if (mmeta && mmeta.news_available === true) {
     + `page ignores it. A leftover file from a previous run is the likely cause.`);
 }
 
+// --------------------------------------------------------- wai_news_history.csv
+//
+// The news of every weekly update, one block per update (date, the latest week
+// of data) and quarter (period), for the page's "over the quarter" view. Built
+// by the update pipeline from the published file plus the week's news. Each
+// block must add up to its own revision, carry one old and one new nowcast, and
+// the latest update's blocks must be this week's wai_news.csv.
+
+const NEWS_HISTORY = "wai_news_history.csv";
+if (existsSync(NEWS_HISTORY)) {
+  const h = readFlatCsv(NEWS_HISTORY, ["date", "period", "nowcast_old", "nowcast_new", "component", "impact"]);
+  if (h) {
+    const blocks = new Map();
+    let prev = "";
+    h.rows.forEach((r, i) => {
+      const [date, period, o, f, comp, imp] = r;
+      if (!DATE_RE.test(date) || !DATE_RE.test(period)) fail(`${NEWS_HISTORY} row ${i + 2}: bad date or period.`);
+      if (`${date} ${period}` < prev) fail(`${NEWS_HISTORY} row ${i + 2}: rows are not sorted by date and period.`);
+      prev = `${date} ${period}`;
+      if (![o, f, imp].every((x) => x !== "" && Number.isFinite(num(x)))) {
+        fail(`${NEWS_HISTORY} row ${i + 2}: nowcast_old, nowcast_new and impact must be numbers.`);
+        return;
+      }
+      const key = `${date} ${period}`;
+      const b = blocks.get(key) || { o, f, sum: 0, n: 0, comps: new Set() };
+      if (b.o !== o || b.f !== f) fail(`${NEWS_HISTORY} row ${i + 2}: block ${key} has more than one old or new nowcast.`);
+      if (b.comps.has(comp)) fail(`${NEWS_HISTORY} row ${i + 2}: component "${comp}" twice in block ${key}.`);
+      b.comps.add(comp); b.sum += num(imp); b.n++;
+      blocks.set(key, b);
+    });
+    for (const [key, b] of blocks) {
+      const gap = Math.abs(b.sum - (num(b.f) - num(b.o)));
+      if (gap > 0.001 * b.n) {
+        fail(`${NEWS_HISTORY} block ${key}: impacts sum to ${b.sum.toFixed(4)} but the revision `
+          + `is ${(num(b.f) - num(b.o)).toFixed(4)}.`);
+      }
+    }
+    // the latest update is this week's news
+    if (mmeta && mmeta.news_available === true && existsSync(NEWS) && h.rows.length) {
+      const latest = h.rows[h.rows.length - 1][0];
+      const head = stripBom(readFileSync(NEWS, "utf8"), NEWS).split(/\r?\n/)[0];
+      const n = readFlatCsv(NEWS, head.startsWith("period,") ? ["period", "component", "impact"] : ["component", "impact"]);
+      if (n) {
+        const long = head.startsWith("period,");
+        const want = n.rows.map((r) => `${long ? r[0] : mmeta.news_period} ${r[long ? 1 : 0]} ${num(r[long ? 2 : 1])}`).sort();
+        const got = h.rows.filter((r) => r[0] === latest).map((r) => `${r[1]} ${r[4]} ${num(r[5])}`).sort();
+        if (want.join("|") !== got.join("|")) {
+          fail(`${NEWS_HISTORY}: its latest update, ${latest}, is not this week's ${NEWS}. The `
+            + `pipeline adds the week's news to the history; the two have come apart.`);
+        }
+      }
+    }
+    note(`${NEWS_HISTORY}: ${blocks.size} update-quarter blocks, each adding up to its revision.`);
+  }
+}
+
 // ---------------------------------------------------------------- wai_series.csv
 
 if (existsSync(SERIES)) {
