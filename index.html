@@ -613,13 +613,23 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 <section class="drivers" id="news" aria-labelledby="news-title" hidden>
   <h2 id="news-title">What moved the nowcast this week</h2>
   <p class="lede">Each week brings new releases. Measured against what the model
-  expected them to be, they move the nowcast of GDP growth for the first quarter
-  whose GDP SECO has not yet published &mdash; which, between the end of a quarter
-  and SECO's release, is the quarter just ended rather than the one running. The
-  bars split that move between the groups of indicators that were
+  expected them to be, they move the nowcast of GDP growth for a quarter whose
+  GDP SECO has not yet published: growth over the <em>whole</em> quarter, as GDP
+  measures it, not the rate of a single week. Between the end of a quarter and
+  SECO's release there are two such quarters, the one just ended and the one
+  running; the buttons below choose between them. The bars split that move between the groups of indicators that were
   released: the bars add up to the change from last week's nowcast to this
   week's.</p>
 
+  <section class="controls" aria-label="News controls">
+    <!-- Filled from wai_measures_meta.json's news_periods, one button per
+         quarter, and left hidden when there is only one. -->
+    <div class="ctl-group" id="news-quarter-group" hidden>
+      <span class="ctl-label" id="lbl-nquarter">Quarter</span>
+      <div class="seg" role="group" aria-labelledby="lbl-nquarter" id="news-quarter-seg"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="show-news-table"> News table</label>
+  </section>
   <section class="chart-card" id="news-card" aria-label="News: impact of this week's releases on the nowcast">
     <div class="chart-box" id="news-box"><canvas id="news-chart" role="img"
          aria-label="Bar chart of how this week's data releases moved the GDP nowcast. It is still loading; the same numbers are available from the News table checkbox below.">
@@ -629,11 +639,8 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </section>
 
   <p class="caption" id="news-summary"></p>
-  <p class="explain"><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of that quarter's GDP growth with the data released since the previous one. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
+  <p class="explain"><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of the chosen quarter's GDP growth, quarter on quarter over the whole quarter, with the data released since the previous one. For the running quarter that nowcast includes the weeks still to come, as the model forecasts them, so a release can move it through the forecast as well as through the weeks already observed. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
 
-  <section class="controls" aria-label="News controls">
-    <label class="check"><input type="checkbox" id="show-news-table"> News table</label>
-  </section>
   <div class="tablewrap" id="news-tablewrap" hidden>
     <table id="news-table"><thead></thead><tbody></tbody></table>
     <p class="stat-note" id="news-table-note"></p>
@@ -1612,7 +1619,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   // totals. The old and new nowcast are stated in the caption instead, and the
   // bars' own axis scales to the impacts, so a 0.0003-point week and a
   // one-point week are both legible.
-  var newsRows = [], newsChart = null;
+  // newsRows is the chosen quarter's rows; newsAll every quarter's. newsQuarters
+  // comes from the metadata, oldest first, each {period, old, new}.
+  var newsRows = [], newsAll = [], newsQuarters = [], newsSel = 0, newsChart = null;
 
   function renderNews() {
     var data = newsRows.slice().sort(function (a, b) {
@@ -1655,17 +1664,17 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       }
     });
 
-    var m = measMeta || {};
+    var q = newsQuarters[newsSel] || {};
     var total = newsRows.reduce(function (s, r) { return s + (r.impact || 0); }, 0);
     var moved = data.filter(function (r) { return r.impact; });
     var top = moved.slice(0, 3).map(function (r) {
       return compStyle(r.component).label + " " + fmtSigned(r.impact);
     }).join(", ");
     document.getElementById("news-chart").setAttribute("aria-label",
-      "Horizontal bar chart of how this week's releases moved the GDP nowcast" +
-      (m.news_period ? " for the quarter starting " + m.news_period : "") + ". " +
-      (m.news_nowcast_old !== undefined
-        ? "It moved from " + fmt(m.news_nowcast_old, 4) + "% to " + fmt(m.news_nowcast_new, 4) + "%. " : "") +
+      "Horizontal bar chart of how this week's releases moved the nowcast of GDP growth" +
+      (q.period ? " over the whole of " + quarterOf(q.period) : "") + ". " +
+      (q.old !== undefined && q.old !== null
+        ? "It moved from " + fmt(q.old) + "% to " + fmt(q.new) + "%. " : "") +
       (moved.length ? "Largest impacts, in points: " + top + ". "
                     : "No group moved it at the published precision. ") +
       "The same numbers are available from the News table checkbox below.");
@@ -1680,8 +1689,38 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
               "</strong></td></tr>");
     document.querySelector("#news-table tbody").innerHTML = body.join("");
     document.getElementById("news-table-note").textContent =
-      "Impacts in percentage points of the annualised quarter-on-quarter GDP nowcast. " +
+      "Impacts in percentage points of the annualised quarter-on-quarter GDP nowcast for " +
+      (q.period ? quarterOf(q.period) : "the quarter") + ", growth over the whole quarter. " +
       "They add up to the change between the two nowcasts, up to rounding.";
+  }
+
+  function newsQuarterLabel(q) {
+    var latest = rows.length ? quarterOf(rows[rows.length - 1].date) : null;
+    return quarterOf(q.period) + (quarterOf(q.period) === latest ? " (running)" : " (ended)");
+  }
+  function buildNewsButtons() {
+    var seg = document.getElementById("news-quarter-seg");
+    seg.innerHTML = newsQuarters.map(function (q, k) {
+      return '<button type="button" data-k="' + k + '" aria-pressed="' + (k === newsSel) + '">' +
+             esc(newsQuarterLabel(q)) + "</button>";
+    }).join("");
+    document.getElementById("news-quarter-group").hidden = newsQuarters.length < 2;
+  }
+  // Selects the chosen quarter's rows and writes its heading and summary.
+  function showNewsQuarter() {
+    var q = newsQuarters[newsSel];
+    newsRows = "period" in newsAll[0]
+      ? newsAll.filter(function (r) { return r.period === q.period; }) : newsAll;
+    var name = quarterOf(q.period);
+    var running = / \(running\)$/.test(newsQuarterLabel(q));
+    // The quarter named in the heading, so it can never be read as the
+    // running quarter when it is the one just ended.
+    document.getElementById("news-title").textContent = "What moved the " + name + " nowcast this week";
+    document.getElementById("news-summary").textContent =
+      "Nowcast of GDP growth over the whole of " + name + (running ? " (running; the weeks still to come are forecast)" : " (ended; GDP not yet published)") +
+      ": " + fmt(q.old) + "% last week, " + fmt(q.new) + "% this week (" +
+      fmtSigned(q.new - q.old) + " points, annualised).";
+    renderNews();
   }
 
   function loadNews() {
@@ -1703,19 +1742,24 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
         return r.text();
       })
       .then(function (text) {
-        newsRows = parseTable(text, ["component"]);
-        needCols(newsRows, ["component", "impact"], "wai_news.csv");
-        var change = m.news_nowcast_new - m.news_nowcast_old;
-        var pm = /^(\d{4})-(\d{2})/.exec(m.news_period || "");
-        var quarter = pm ? " for " + quarterOf(m.news_period) : "";
-        // The quarter named in the heading, so it can never be read as the
-        // running quarter when it is the one just ended.
-        if (pm) document.getElementById("news-title").textContent =
-          "What moved the " + quarterOf(m.news_period) + " nowcast this week";
-        summary.textContent = "Nowcast" + quarter + ": " + fmt(m.news_nowcast_old) + "% last week, " +
-          fmt(m.news_nowcast_new) + "% this week (" + fmtSigned(change) + " points, annualised).";
+        newsAll = parseTable(text, ["period", "component"]);
+        needCols(newsAll, ["component", "impact"], "wai_news.csv");
+        // The quarters, from the metadata. A file from before there were several
+        // has no period column and is the one quarter news_period names.
+        var arr = function (x, y) { return x === undefined || x === null ? [y] : [].concat(x); };
+        var periods = arr(m.news_periods, m.news_period);
+        var olds = arr(m.news_nowcasts_old, m.news_nowcast_old);
+        var news = arr(m.news_nowcasts_new, m.news_nowcast_new);
+        newsQuarters = periods.map(function (p, k) { return { period: p, old: olds[k], new: news[k] }; })
+          .filter(function (q) {
+            return !("period" in newsAll[0]) || newsAll.some(function (r) { return r.period === q.period; });
+          });
+        if (!newsQuarters.length) throw new Error("wai_news.csv has no rows for the quarters listed");
+        // The running quarter first: it is the one the forecast completes.
+        newsSel = newsQuarters.length - 1;
+        buildNewsButtons();
+        showNewsQuarter();
         panel.hidden = false;
-        renderNews();
       })
       .catch(function (err) {
         panel.hidden = true;
@@ -2137,6 +2181,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   });
   document.getElementById("show-ind-table").addEventListener("change", function () {
     document.getElementById("ind-tablewrap").hidden = !this.checked;
+  });
+  segHandler("news-quarter-seg", function (btn) { newsSel = Number(btn.dataset.k); }, function () {
+    if (newsQuarters.length) showNewsQuarter();
   });
   document.getElementById("show-news-table").addEventListener("change", function () {
     document.getElementById("news-tablewrap").hidden = !this.checked;

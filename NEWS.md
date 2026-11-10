@@ -21,6 +21,13 @@ published.
 
 ## 2026-11-10
 
+- **Presentation** — The news panel shows every quarter whose GDP SECO has not
+  yet published, with a button for each: until SECO's release, the quarter just
+  ended and the running one. It opens on the running quarter. The text says
+  what the nowcast is: GDP growth over the whole quarter, and for the running
+  quarter one that includes the weeks still to come as the model forecasts
+  them. `wai_news.csv` gains a `period` column, one block per quarter; the page
+  and the validator still read the older two-column file.
 - **Presentation** — The nowcast diamond is labelled with what it is: the
   running quarter **to date**, "Nowcast 2026Q4 (5 of 12 weeks)", averaging the
   weeks observed so far. It stays on the latest week. The page can now show the

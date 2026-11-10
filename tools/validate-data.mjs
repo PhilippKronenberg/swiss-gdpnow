@@ -479,37 +479,58 @@ if (mmeta && mmeta.news_available === true) {
   if (!existsSync(NEWS)) {
     fail(`${MEASURES_META} says news_available: true but ${NEWS} does not exist.`);
   } else {
-    const n = readFlatCsv(NEWS, ["component", "impact"]);
+    // Long since one block per quarter (period,component,impact); the older
+    // two-column file is one block for news_period.
+    const head = stripBom(readFileSync(NEWS, "utf8"), NEWS).split(/\r?\n/)[0];
+    const long = head.startsWith("period,");
+    const n = readFlatCsv(NEWS, long ? ["period", "component", "impact"] : ["component", "impact"]);
     if (n) {
-      let total = 0;
+      const ci = long ? 1 : 0, ii = long ? 2 : 1;
+      const sums = new Map();
       n.rows.forEach((r, i) => {
-        if (!Number.isFinite(num(r[1]))) {
-          fail(`${NEWS} row ${i + 2}: impact "${r[1]}" is not a finite number.`);
+        if (!Number.isFinite(num(r[ii]))) {
+          fail(`${NEWS} row ${i + 2}: impact "${r[ii]}" is not a finite number.`);
           return;
         }
-        total += num(r[1]);
-        if (components && !components.includes(r[0])) {
-          fail(`${NEWS} row ${i + 2}: component "${r[0]}" is not in ${MEASURES_META} `
+        const p = long ? r[0] : mmeta.news_period;
+        sums.set(p, (sums.get(p) || 0) + num(r[ii]));
+        if (components && !components.includes(r[ci])) {
+          fail(`${NEWS} row ${i + 2}: component "${r[ci]}" is not in ${MEASURES_META} `
             + `"components".`);
         }
       });
-      const old = mmeta.news_nowcast_old, fresh = mmeta.news_nowcast_new;
-      if (typeof old !== "number" || typeof fresh !== "number") {
-        fail(`${MEASURES_META} has news_available: true but news_nowcast_old/new are not `
-          + `both numbers; the news panel's caption reads them.`);
-      } else {
-        const tol = 0.001 * Math.max(n.rows.length, 1);
-        const gap = Math.abs(total - (fresh - old));
-        if (gap > tol) {
-          fail(`${NEWS}: impacts sum to ${total.toFixed(4)} but the revision `
-            + `news_nowcast_new − news_nowcast_old is ${(fresh - old).toFixed(4)} — `
-            + `off by ${gap.toFixed(4)}, past ${tol.toFixed(4)}. The news panel walks `
-            + `from one nowcast to the other through these impacts, so they must add up.`);
-        } else {
-          note(`${NEWS}: ${n.rows.length} impacts sum to ${total.toFixed(4)} against a `
-            + `${(fresh - old).toFixed(4)} revision.`);
-        }
+      const periods = Array.isArray(mmeta.news_periods) ? mmeta.news_periods
+        : (mmeta.news_periods ? [mmeta.news_periods] : [mmeta.news_period]);
+      const olds = [].concat(mmeta.news_nowcasts_old ?? mmeta.news_nowcast_old);
+      const fresh = [].concat(mmeta.news_nowcasts_new ?? mmeta.news_nowcast_new);
+      if (periods[0] !== mmeta.news_period) {
+        fail(`${MEASURES_META}: news_periods starts at "${periods[0]}" but news_period is `
+          + `"${mmeta.news_period}"; the first quarter must be the one news_period names.`);
       }
+      for (const p of sums.keys()) {
+        if (!periods.includes(p)) fail(`${NEWS} has quarter "${p}", which ${MEASURES_META} does not list.`);
+      }
+      periods.forEach((p, k) => {
+        const o = olds[k], f = fresh[k];
+        if (typeof o !== "number" || typeof f !== "number") {
+          fail(`${MEASURES_META} has news_available: true but the old and new nowcast for `
+            + `"${p}" are not both numbers; the news panel's caption reads them.`);
+          return;
+        }
+        const rowsP = long ? n.rows.filter((r) => r[0] === p).length : n.rows.length;
+        if (!rowsP) { fail(`${NEWS} has no rows for quarter "${p}".`); return; }
+        const total = sums.get(p) || 0;
+        const tol = 0.001 * Math.max(rowsP, 1);
+        const gap = Math.abs(total - (f - o));
+        if (gap > tol) {
+          fail(`${NEWS} (${p}): impacts sum to ${total.toFixed(4)} but the revision is `
+            + `${(f - o).toFixed(4)} — off by ${gap.toFixed(4)}, past ${tol.toFixed(4)}. The news `
+            + `panel walks from one nowcast to the other through these impacts, so they must add up.`);
+        } else {
+          note(`${NEWS} (${p}): ${rowsP} impacts sum to ${total.toFixed(4)} against a `
+            + `${(f - o).toFixed(4)} revision.`);
+        }
+      });
     }
   }
 } else if (mmeta && existsSync(NEWS)) {
