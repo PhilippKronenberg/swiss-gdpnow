@@ -309,6 +309,10 @@ label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
 .swatch { width: 14px; height: 3px; border-radius: 2px; flex: none; }
 .swatch.dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface-1); }
 .swatch.diamond { width: 10px; height: 10px; border-radius: 0; transform: rotate(45deg); }
+/* The forecast's quarterly markers: the nowcast's diamond, hollow. */
+.swatch.diamond.hollow { background: transparent; border: 2px solid var(--series-nowcast); width: 9px; height: 9px; }
+/* The weekly forecast: the Swiss GDPNow line, dashed. */
+.swatch.dash { height: 0; background: none; border-top: 2px dashed var(--series-wai); border-radius: 0; }
 .swatch.band { height: 12px; width: 14px; border-radius: 3px; }
 /* A stacked bar reads as an area, not a line, so its key is a block. Separate
    from .band only so the two can diverge without one renaming the other. */
@@ -444,6 +448,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <label class="check"><input type="checkbox" id="show-band" checked> 95% band</label>
   <label class="check"><input type="checkbox" id="show-gdp" checked> Published GDP</label>
   <label class="check"><input type="checkbox" id="show-waiq" checked> Swiss GDPNow, quarterly</label>
+  <label class="check" id="show-fc-label" hidden><input type="checkbox" id="show-fc" checked> Forecast</label>
   <label class="check"><input type="checkbox" id="show-table"> Data table</label>
   <div class="range-row">
     <span class="ctl-label">Dates</span>
@@ -475,6 +480,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <div class="legend" id="legend"></div>
 </section>
 <p class="explain"><strong>Why two Swiss GDPNow lines on the growth charts.</strong> The blue line is the weekly index: an instantaneous annualised growth rate, read every week. Quarterly GDP is a <em>flow</em> &mdash; the average level of activity across the whole quarter &mdash; so the like-for-like comparison is the green series, the weekly index averaged over each quarter. Compared this way, Swiss GDPNow matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points across 143 quarters.</p>
+<p class="explain"><strong>Nowcast and forecast.</strong> The filled red diamond is the <em>nowcast</em>: the running quarter's growth over the weeks observed so far, on the latest week, and labelled with how many of the quarter's 12 weeks that is. Early in a quarter it rests on few weeks and moves with each one. The dashed line continues the weekly index past the data, as the model forecasts it, to the end of the running quarter. The hollow diamond there averages the observed and the forecast weeks together and so gives the whole quarter's growth as GDP will measure it. The forecast's band widens with the horizon.</p>
 
 <div class="tablewrap" id="tablewrap" hidden>
   <table id="table"><thead></thead><tbody></tbody></table>
@@ -484,6 +490,10 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 <div class="actions">
   <button class="btn" id="dl-view" type="button">Download current view (CSV)</button>
   <button class="btn" id="dl-full" type="button">Download full data (CSV)</button>
+  <!-- Shown only once wai_forecast.csv has loaded. A button, not a link: the
+       file is additive and may be absent, and tools/validate-data.mjs fails any
+       href to a file that does not exist. -->
+  <button class="btn" id="dl-forecast" type="button" hidden>Download forecast (CSV)</button>
 </div>
 
 <!-- Hidden until the contributions data has actually loaded, and left hidden if
@@ -603,25 +613,46 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 <section class="drivers" id="news" aria-labelledby="news-title" hidden>
   <h2 id="news-title">What moved the nowcast this week</h2>
   <p class="lede">Each week brings new releases. Measured against what the model
-  expected them to be, they move the nowcast of GDP growth for the current
-  quarter. The bars split that move between the groups of indicators that were
+  expected them to be, they move the nowcast of GDP growth for a quarter whose
+  GDP SECO has not yet published: growth over the <em>whole</em> quarter, as GDP
+  measures it, not the rate of a single week. Between the end of a quarter and
+  SECO's release there are two such quarters, the one just ended and the one
+  running; the buttons below choose between them. The bars split that move between the groups of indicators that were
   released: the bars add up to the change from last week's nowcast to this
   week's.</p>
 
+  <section class="controls" aria-label="News controls">
+    <!-- Filled from wai_measures_meta.json's news_periods, one button per
+         quarter, and left hidden when there is only one. -->
+    <!-- Shown once wai_news_history.csv has loaded with rows for the chosen
+         quarter: this week's news, or every weekly update's over the quarter. -->
+    <div class="ctl-group" id="news-view-group" hidden>
+      <span class="ctl-label" id="lbl-nview">View</span>
+      <div class="seg" role="group" aria-labelledby="lbl-nview" id="news-view-seg">
+        <button type="button" data-nview="week" aria-pressed="true">This week</button>
+        <button type="button" data-nview="history" aria-pressed="false">Over the quarter</button>
+      </div>
+    </div>
+    <div class="ctl-group" id="news-quarter-group" hidden>
+      <span class="ctl-label" id="lbl-nquarter">Quarter</span>
+      <div class="seg" role="group" aria-labelledby="lbl-nquarter" id="news-quarter-seg"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="show-news-table"> News table</label>
+  </section>
   <section class="chart-card" id="news-card" aria-label="News: impact of this week's releases on the nowcast">
     <div class="chart-box" id="news-box"><canvas id="news-chart" role="img"
          aria-label="Bar chart of how this week's data releases moved the GDP nowcast. It is still loading; the same numbers are available from the News table checkbox below.">
       <p>Your browser cannot display this chart. The same numbers are available
       as text: tick the <strong>News table</strong> checkbox below.</p>
     </canvas></div>
+    <!-- The week-by-week view stacks the groups, so it needs a key; the
+         this-week view names each bar on its axis and leaves this hidden. -->
+    <div class="legend" id="news-legend" hidden></div>
   </section>
 
   <p class="caption" id="news-summary"></p>
-  <p class="explain"><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of this quarter's GDP growth with the data released since the previous one. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
+  <p class="explain"><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of the chosen quarter's GDP growth, quarter on quarter over the whole quarter, with the data released since the previous one. For the running quarter that nowcast includes the weeks still to come, as the model forecasts them, so a release can move it through the forecast as well as through the weeks already observed. <em>Over the quarter</em> shows one stacked bar per weekly update instead: the news of that week's releases for the chosen quarter, split by group in the same way, with the line giving the nowcast after each update (right-hand axis). Read along the bars, the quarter's nowcast is built up week by week. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
 
-  <section class="controls" aria-label="News controls">
-    <label class="check"><input type="checkbox" id="show-news-table"> News table</label>
-  </section>
   <div class="tablewrap" id="news-tablewrap" hidden>
     <table id="news-table"><thead></thead><tbody></tbody></table>
     <p class="stat-note" id="news-table-note"></p>
@@ -742,9 +773,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                     "International trade", "Financial markets", "Consumption",
                     "Labour market", "Money and interest rates", "parameter_uncertainty"];
 
-  var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true };
+  var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true, fc: true };
   var cstate = { years: 5, since: null };
   var rows = [], meta = null, chart = null;
+  // wai_forecast.csv: the weeks past the data, as the model forecasts them, to the
+  // end of the running quarter. Additive: empty when the file is
+  // absent, and then the page is exactly what it was without it.
+  var fcRows = [];
   var contribRows = [], measMeta = null, contribChart = null;
 
   function css(name) {
@@ -848,6 +883,32 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   }
   function visibleRows() { return sliceRange(rows, state); }
 
+  // "2026Q4" for a date in that quarter.
+  function quarterOf(date) {
+    var m = /^(\d{4})-(\d{2})/.exec(date || "");
+    return m ? m[1] + "Q" + (Math.floor((Number(m[2]) - 1) / 3) + 1) : date;
+  }
+  function weeksPerQuarter() { return (meta && meta.weeks_per_quarter) || 12; }
+  // The forecast is drawn when the range shown ends at the latest week: it
+  // continues the line from there, and a range that stops earlier is history.
+  function forecastShown(data) {
+    return state.fc && fcRows.length > 0 && data.length > 0 && rows.length > 0 &&
+      data[data.length - 1].t === rows[rows.length - 1].t;
+  }
+  // The forecast's quarterly values: on each quarter's last week, the whole
+  // quarter, observed and forecast weeks averaged together.
+  function forecastPoints(v) {
+    if (!v.quarterly) return [];
+    return fcRows.filter(function (r) {
+      var x = r[v.quarterly];
+      return x !== null && x !== undefined && !isNaN(x);
+    }).map(function (r) {
+      var q = quarterOf(r.date);
+      var observed = rows.filter(function (o) { return quarterOf(o.date) === q; }).length;
+      return { t: r.t, value: r[v.quarterly], quarter: q, date: r.date, observed: observed };
+    });
+  }
+
   // --- crosshair ---------------------------------------------------------
   var crosshair = {
     id: "crosshair",
@@ -883,6 +944,24 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                 borderColor: wai, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
                 pointHoverBackgroundColor: wai, tension: 0, fill: false, order: 1 });
 
+    // The forecast: the same line, dashed, from the latest week on, so it joins
+    // the observed line rather than leaving a gap. Its band is drawn the same way
+    // as the observed one and widens with the horizon.
+    if (forecastShown(data)) {
+      var fdata = [data[data.length - 1]].concat(fcRows);
+      if (hasBand) {
+        sets.push({ label: "lo", data: fdata.map(function (r) { return { x: r.t, y: r[v.lo] }; }),
+                    borderWidth: 0, pointRadius: 0, fill: false, order: 4 });
+        sets.push({ label: "Forecast, 95% credible band",
+                    data: fdata.map(function (r) { return { x: r.t, y: r[v.hi] }; }),
+                    borderWidth: 0, pointRadius: 0, backgroundColor: band, fill: "-1", order: 4 });
+      }
+      sets.push({ label: "Forecast", data: fdata.map(function (r) { return { x: r.t, y: r[v.mean] }; }),
+                  borderColor: wai, borderWidth: 2, borderDash: [6, 4], pointRadius: 0,
+                  pointHoverRadius: 4, pointHoverBackgroundColor: wai, tension: 0,
+                  fill: false, order: 1 });
+    }
+
     if (state.waiq && v.quarterly && data.some(function (r) { return r[v.quarterly] !== null; })) {
       sets.push({ label: "Swiss GDPNow, aggregated to quarterly",
                   data: data.filter(function (r) { return r[v.quarterly] !== null; })
@@ -911,12 +990,22 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     });
     // One dataset per quarter, so the hover names its quarter.
     ncs.forEach(function (p) {
-      sets.push({ label: "Nowcast " + p.quarter,
+      sets.push({ label: nowcastLabel(p),
                   data: [{ x: p.t, y: p.value }],
                   showLine: false, borderColor: css("--surface-1"),
                   backgroundColor: css("--series-nowcast"), pointStyle: "rectRot",
                   pointRadius: 8, pointHoverRadius: 10, pointBorderWidth: 2, order: -1 });
     });
+    // The forecast's quarters: the same diamond, hollow, at each quarter's end.
+    if (forecastShown(data)) {
+      forecastPoints(v).forEach(function (p) {
+        sets.push({ label: forecastLabel(p),
+                    data: [{ x: p.t, y: p.value }],
+                    showLine: false, borderColor: css("--series-nowcast"),
+                    backgroundColor: css("--surface-1"), pointStyle: "rectRot",
+                    pointRadius: 7, pointHoverRadius: 9, pointBorderWidth: 2.5, order: -1 });
+      });
+    }
     return sets;
   }
 
@@ -945,11 +1034,22 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     for (var i = lastGdp + 1; i < rows.length; i++) {
       var r = rows[i], value = r[v.quarterly];
       if (value === null || value === undefined || isNaN(value)) continue;
-      var m = /^(\d{4})-(\d{2})/.exec(r.date);
-      var quarter = m ? m[1] + "Q" + (Math.floor((Number(m[2]) - 1) / 3) + 1) : r.date;
-      out.push({ t: r.t, value: value, quarter: quarter, date: r.date, running: i === rows.length - 1 });
+      var quarter = quarterOf(r.date);
+      // How many of the quarter's weeks the value averages: all of them for a
+      // quarter that has ended, the weeks so far for the running one.
+      var weeks = 0;
+      for (var j = i; j >= 0 && quarterOf(rows[j].date) === quarter; j--) weeks++;
+      out.push({ t: r.t, value: value, quarter: quarter, date: r.date, weeks: weeks,
+                 running: i === rows.length - 1 });
     }
     return out;
+  }
+  function nowcastLabel(p) {
+    return "Nowcast " + p.quarter + " (" + p.weeks + " of " + weeksPerQuarter() + " weeks)";
+  }
+  function forecastLabel(p) {
+    return "Forecast " + p.quarter + " (" + (p.observed ? "whole quarter, " + p.observed + " of " +
+      weeksPerQuarter() + " weeks observed" : "all weeks forecast") + ")";
   }
 
   function renderLegend() {
@@ -966,8 +1066,15 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     }
     nowcastPoints(v).forEach(function (p) {
       parts.push('<span><i class="swatch diamond" style="background:' + css("--series-nowcast") +
-                 '"></i>Nowcast ' + esc(p.quarter) + ": " + qoqText(state.view, p.value) + '</span>');
+                 '"></i>' + esc(nowcastLabel(p)) + ": " + qoqText(state.view, p.value) + '</span>');
     });
+    if (forecastShown(visibleRows())) {
+      parts.push('<span><i class="swatch dash"></i>Forecast to ' + esc(fcRows[fcRows.length - 1].date) + '</span>');
+      forecastPoints(v).forEach(function (p) {
+        parts.push('<span><i class="swatch diamond hollow"></i>' + esc(forecastLabel(p)) + ": " +
+                   qoqText(state.view, p.value) + '</span>');
+      });
+    }
     document.getElementById("legend").innerHTML = parts.join("");
   }
 
@@ -1004,8 +1111,15 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       }
       var ncs = nowcastPoints(v);
       if (ncs.length) also.push("the nowcast" + (ncs.length > 1 ? "s" : "") + " for " +
-        ncs.map(function (p) { return p.quarter + ", " + fmt(p.value) + v.unit; }).join(", and for ") +
+        ncs.map(function (p) { return p.quarter + " (" + p.weeks + " of " + weeksPerQuarter() + " weeks), " +
+          fmt(p.value) + v.unit; }).join(", and for ") +
         (ncs.length > 1 ? ", as red diamonds" : ", as a red diamond"));
+      if (forecastShown(data)) {
+        var fps = forecastPoints(v);
+        also.push("a dashed forecast of the weekly index to " + fcRows[fcRows.length - 1].date +
+          (fps.length ? ", with whole-quarter forecasts as hollow diamonds for " +
+            fps.map(function (p) { return p.quarter + ", " + fmt(p.value) + v.unit; }).join(", and for ") : ""));
+      }
       parts = ["Line chart of " + v.label + ", weekly from " + first.date + " to " + last.date + ".",
                "Latest " + fmt(last[v.mean], d) + v.unit + ", ranging from " + fmt(lo, d) + v.unit +
                " to " + fmt(hi, d) + v.unit + " over that span."];
@@ -1031,7 +1145,10 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
           // Half a week of margin, so the first and last markers are not cut by the edge.
           x: { type: "time", time: { tooltipFormat: "d MMM yyyy" },
                min: data.length ? data[0].t - 3.5 * 864e5 : undefined,
-               max: data.length ? data[data.length - 1].t + 3.5 * 864e5 : undefined,
+               // The forecast ends on a hollow diamond, which needs more room
+               // than a line end to be drawn whole on a narrow screen.
+               max: data.length ? (forecastShown(data) ? fcRows[fcRows.length - 1].t + 12 * 864e5
+                                                       : data[data.length - 1].t + 3.5 * 864e5) : undefined,
                grid: { display: false },
                border: { color: css("--border") },
                ticks: { color: css("--text-secondary"), maxRotation: 0, autoSkipPadding: 24 } },
@@ -1053,7 +1170,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
               label: function (item) {
                 var y = item.parsed.y;
                 if (y === null || y === undefined) return null;
-                var name = item.dataset.label === "95% credible band" ? "upper bound" : item.dataset.label;
+                var name = item.dataset.label === "95% credible band" ? "upper bound"
+                  : item.dataset.label === "Forecast, 95% credible band" ? "forecast upper bound"
+                  : item.dataset.label;
                 return name + ": " + qoqText(state.view, y);
               }
             }
@@ -1073,15 +1192,21 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     if (v.gdp) cols.push([v.gdp, "GDP"]);
 
     var tail = data.slice(-24);
+    var fc = forecastShown(data) ? fcRows : [];
+    var rowHtml = function (r, isFc) {
+      return "<tr>" + cols.map(function (c) {
+        return "<td>" + (c[0] === "date" ? r.date + (isFc ? " (forecast)" : "") : fmt(r[c[0]])) + "</td>";
+      }).join("") + "</tr>";
+    };
     document.querySelector("#table thead").innerHTML =
       "<tr>" + cols.map(function (c) { return "<th>" + c[1] + "</th>"; }).join("") + "</tr>";
-    document.querySelector("#table tbody").innerHTML = tail.map(function (r) {
-      return "<tr>" + cols.map(function (c) {
-        return "<td>" + (c[0] === "date" ? r.date : fmt(r[c[0]])) + "</td>";
-      }).join("") + "</tr>";
-    }).join("");
+    document.querySelector("#table tbody").innerHTML =
+      tail.map(function (r) { return rowHtml(r, false); }).join("") +
+      fc.map(function (r) { return rowHtml(r, true); }).join("");
     document.getElementById("table-note").textContent =
-      "Last " + tail.length + " of " + data.length + " weeks in the selected range. Use the download buttons for the full series.";
+      "Last " + tail.length + " of " + data.length + " weeks in the selected range" +
+      (fc.length ? ", then the " + fc.length + " forecast weeks" : "") +
+      ". Use the download buttons for the full series.";
   }
 
   function renderStats() {
@@ -1112,11 +1237,20 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       return a === null || a === undefined || isNaN(a) ? "–"
         : fmt(notAnnualised(a)) + '% <span class="stat-ann">(ann. ' + fmt(a) + "%)</span>";
     };
+    var wpq = weeksPerQuarter();
     var ncTiles = ncs.map(function (p) {
-      return { label: "Nowcast " + p.quarter + ", QoQ (annualised)", value: qv(p.value),
-               note: p.running ? "quarter running; from data to " + last.date
+      return { label: "Nowcast " + p.quarter + ", " + p.weeks + " of " + wpq + " weeks, QoQ (annualised)",
+               value: qv(p.value),
+               note: p.running ? "quarter to date: the " + p.weeks + " week" + (p.weeks === 1 ? "" : "s") +
+                                 " observed so far; data to " + last.date
                                : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date };
     });
+    // The forecast's quarter, whole: the running one completed.
+    ncTiles = ncTiles.concat(forecastPoints(VIEWS.qoq).map(function (p) {
+      return { label: "Forecast " + p.quarter + ", whole quarter, QoQ (annualised)", value: qv(p.value),
+               note: (p.observed ? p.observed + " weeks observed, " + (wpq - p.observed) + " forecast"
+                                 : "all " + wpq + " weeks forecast") + "; quarter ending " + p.date };
+    }));
     var tiles = (ncTiles.length ? ncTiles
       : [{ label: "Swiss GDPNow, latest quarter, QoQ (annualised)", value: qrow ? qv(qrow.wai_qoq_q) : "–",
            note: qrow ? "quarter ending " + qrow.date : "" }]).concat([
@@ -1497,9 +1631,126 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   // totals. The old and new nowcast are stated in the caption instead, and the
   // bars' own axis scales to the impacts, so a 0.0003-point week and a
   // one-point week are both legible.
-  var newsRows = [], newsChart = null;
+  // newsRows is the chosen quarter's rows; newsAll every quarter's. newsQuarters
+  // comes from the metadata, oldest first, each {period, old, new}.
+  var newsRows = [], newsAll = [], newsQuarters = [], newsSel = 0, newsChart = null;
+  // wai_news_history.csv: every weekly update's news, {date, period, nowcast_old,
+  // nowcast_new, component, impact}. Additive; empty when absent.
+  var newsHist = [], newsView = "week";
+
+  // The chosen quarter's updates, oldest first: [{date, old, new, values}].
+  function newsHistoryUpdates() {
+    var q = newsQuarters[newsSel], by = {}, out = [];
+    if (!q) return out;
+    newsHist.forEach(function (r) {
+      if (r.period !== q.period) return;
+      var u = by[r.date];
+      if (!u) { u = by[r.date] = { date: r.date, old: r.nowcast_old, new: r.nowcast_new, values: {} }; out.push(u); }
+      u.values[r.component] = r.impact;
+    });
+    return out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+  }
+  function orderComps(names) {
+    return names.sort(function (a, b) {
+      var ia = COMP_ORDER.indexOf(a), ib = COMP_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a < b ? -1 : a > b ? 1 : 0;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+  }
+
+  function renderNewsHistory() {
+    var ups = newsHistoryUpdates(), q = newsQuarters[newsSel];
+    var seen = {};
+    ups.forEach(function (u) { Object.keys(u.values).forEach(function (c) { seen[c] = true; }); });
+    var comps = orderComps(Object.keys(seen));
+    if (newsChart) { newsChart.destroy(); newsChart = null; }
+    document.getElementById("news-box").style.height = "380px";
+    var labels = ups.map(function (u) { return u.date; });
+    var sets = comps.map(function (c) {
+      return { type: "bar", label: compStyle(c).label, yAxisID: "y", order: 2,
+               data: ups.map(function (u) { return c in u.values ? u.values[c] : 0; }),
+               backgroundColor: css(compStyle(c).token), borderWidth: 0, barPercentage: 0.8 };
+    });
+    sets.push({ type: "line", label: "Nowcast after the update", yAxisID: "y1", order: 1,
+                data: ups.map(function (u) { return u.new; }),
+                borderColor: css("--series-nowcast"), backgroundColor: css("--series-nowcast"),
+                borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0 });
+    newsChart = new Chart(document.getElementById("news-chart"), {
+      type: "bar",
+      data: { labels: labels, datasets: sets },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: { stacked: true, grid: { display: false }, border: { color: css("--border") },
+               ticks: { color: css("--text-secondary"), maxRotation: 0, autoSkipPadding: 16 },
+               title: { display: true, color: css("--text-muted"), font: { size: 11 },
+                        text: "Weekly update (data to)" } },
+          y: { stacked: true, grid: { color: css("--grid"), drawTicks: false }, border: { display: false },
+               ticks: { color: css("--text-secondary") },
+               title: { display: true, color: css("--text-muted"), font: { size: 11 },
+                        text: "News, percentage points" } },
+          y1: { position: "right", grid: { display: false }, border: { display: false },
+                ticks: { color: css("--text-secondary"), callback: function (v) { return v + "%"; } },
+                title: { display: true, color: css("--text-muted"), font: { size: 11 },
+                         text: "Nowcast, % annualised" } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: css("--surface-1"), titleColor: css("--text-primary"),
+            bodyColor: css("--text-secondary"), footerColor: css("--text-secondary"),
+            borderColor: css("--border"), borderWidth: 1, padding: 10, cornerRadius: 6,
+            filter: function (item) { return item.dataset.type === "line" || item.parsed.y !== 0; },
+            callbacks: {
+              title: function (items) { return "Update with data to " + items[0].label; },
+              label: function (item) {
+                return item.dataset.type === "line"
+                  ? item.dataset.label + ": " + fmt(item.parsed.y) + "%"
+                  : item.dataset.label + ": " + fmtSigned(item.parsed.y) + " points";
+              },
+              footer: function (items) {
+                var u = ups[items[0].dataIndex];
+                return "Revision " + fmtSigned(u.new - u.old) + " points (" + fmt(u.old) + "% to " + fmt(u.new) + "%)";
+              }
+            }
+          }
+        }
+      }
+    });
+    var name = q ? quarterOf(q.period) : "the quarter";
+    var leg = document.getElementById("news-legend");
+    leg.innerHTML = comps.map(function (c) {
+      return '<span><i class="swatch box" style="background:' + css(compStyle(c).token) + '"></i>' +
+             esc(compStyle(c).label) + "</span>";
+    }).join("") + '<span><i class="swatch" style="background:' + css("--series-nowcast") +
+      '"></i>Nowcast after the update (right axis)</span>';
+    leg.hidden = false;
+    document.getElementById("news-chart").setAttribute("aria-label",
+      "Stacked bar chart of the news in each weekly update for the " + name + " nowcast, " +
+      ups.length + " update" + (ups.length === 1 ? "" : "s") +
+      (ups.length ? " from " + ups[0].date + " to " + ups[ups.length - 1].date +
+        ", with the nowcast moving from " + fmt(ups[0].old) + "% to " + fmt(ups[ups.length - 1].new) + "%" : "") +
+      ". The same numbers are available from the News table checkbox below.");
+    document.querySelector("#news-table thead").innerHTML =
+      "<tr><th>Update (data to)</th><th>Nowcast before</th><th>Nowcast after</th><th>Revision</th>" +
+      comps.map(function (c) { return "<th>" + esc(compStyle(c).label) + "</th>"; }).join("") + "</tr>";
+    document.querySelector("#news-table tbody").innerHTML = ups.map(function (u) {
+      return "<tr><td>" + u.date + "</td><td>" + fmt(u.old) + "%</td><td>" + fmt(u.new) + "%</td><td>" +
+        fmtSigned(u.new - u.old) + "</td>" + comps.map(function (c) {
+          return "<td>" + (c in u.values ? fmtSigned(u.values[c]) : "–") + "</td>";
+        }).join("") + "</tr>";
+    }).join("");
+    document.getElementById("news-table-note").textContent =
+      "One row per weekly update for " + name + ". Impacts in percentage points of the annualised " +
+      "quarter-on-quarter GDP nowcast, growth over the whole quarter; per update they add up to the revision, up to rounding.";
+  }
 
   function renderNews() {
+    if (newsView === "history" && newsHistoryUpdates().length) return renderNewsHistory();
+    document.getElementById("news-legend").hidden = true;
     var data = newsRows.slice().sort(function (a, b) {
       return Math.abs(b.impact) - Math.abs(a.impact);
     });
@@ -1540,17 +1791,17 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       }
     });
 
-    var m = measMeta || {};
+    var q = newsQuarters[newsSel] || {};
     var total = newsRows.reduce(function (s, r) { return s + (r.impact || 0); }, 0);
     var moved = data.filter(function (r) { return r.impact; });
     var top = moved.slice(0, 3).map(function (r) {
       return compStyle(r.component).label + " " + fmtSigned(r.impact);
     }).join(", ");
     document.getElementById("news-chart").setAttribute("aria-label",
-      "Horizontal bar chart of how this week's releases moved the GDP nowcast" +
-      (m.news_period ? " for the quarter starting " + m.news_period : "") + ". " +
-      (m.news_nowcast_old !== undefined
-        ? "It moved from " + fmt(m.news_nowcast_old, 4) + "% to " + fmt(m.news_nowcast_new, 4) + "%. " : "") +
+      "Horizontal bar chart of how this week's releases moved the nowcast of GDP growth" +
+      (q.period ? " over the whole of " + quarterOf(q.period) : "") + ". " +
+      (q.old !== undefined && q.old !== null
+        ? "It moved from " + fmt(q.old) + "% to " + fmt(q.new) + "%. " : "") +
       (moved.length ? "Largest impacts, in points: " + top + ". "
                     : "No group moved it at the published precision. ") +
       "The same numbers are available from the News table checkbox below.");
@@ -1565,8 +1816,40 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
               "</strong></td></tr>");
     document.querySelector("#news-table tbody").innerHTML = body.join("");
     document.getElementById("news-table-note").textContent =
-      "Impacts in percentage points of the annualised quarter-on-quarter GDP nowcast. " +
+      "Impacts in percentage points of the annualised quarter-on-quarter GDP nowcast for " +
+      (q.period ? quarterOf(q.period) : "the quarter") + ", growth over the whole quarter. " +
       "They add up to the change between the two nowcasts, up to rounding.";
+  }
+
+  function newsQuarterLabel(q) {
+    var latest = rows.length ? quarterOf(rows[rows.length - 1].date) : null;
+    return quarterOf(q.period) + (quarterOf(q.period) === latest ? " (running)" : " (ended)");
+  }
+  function buildNewsButtons() {
+    var seg = document.getElementById("news-quarter-seg");
+    seg.innerHTML = newsQuarters.map(function (q, k) {
+      return '<button type="button" data-k="' + k + '" aria-pressed="' + (k === newsSel) + '">' +
+             esc(newsQuarterLabel(q)) + "</button>";
+    }).join("");
+    document.getElementById("news-quarter-group").hidden = newsQuarters.length < 2;
+  }
+  // Selects the chosen quarter's rows and writes its heading and summary.
+  function showNewsQuarter() {
+    var q = newsQuarters[newsSel];
+    newsRows = "period" in newsAll[0]
+      ? newsAll.filter(function (r) { return r.period === q.period; }) : newsAll;
+    var name = quarterOf(q.period);
+    var running = / \(running\)$/.test(newsQuarterLabel(q));
+    // The quarter named in the heading, so it can never be read as the
+    // running quarter when it is the one just ended.
+    document.getElementById("news-title").textContent = "What moved the " + name + " nowcast" +
+      (newsView === "history" && newsHistoryUpdates().length ? ", week by week" : " this week");
+    document.getElementById("news-view-group").hidden = !newsHistoryUpdates().length;
+    document.getElementById("news-summary").textContent =
+      "Nowcast of GDP growth over the whole of " + name + (running ? " (running; the weeks still to come are forecast)" : " (ended; GDP not yet published)") +
+      ": " + fmt(q.old) + "% last week, " + fmt(q.new) + "% this week (" +
+      fmtSigned(q.new - q.old) + " points, annualised).";
+    renderNews();
   }
 
   function loadNews() {
@@ -1588,15 +1871,39 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
         return r.text();
       })
       .then(function (text) {
-        newsRows = parseTable(text, ["component"]);
-        needCols(newsRows, ["component", "impact"], "wai_news.csv");
-        var change = m.news_nowcast_new - m.news_nowcast_old;
-        var pm = /^(\d{4})-(\d{2})/.exec(m.news_period || "");
-        var quarter = pm ? " for " + pm[1] + "Q" + (Math.floor((Number(pm[2]) - 1) / 3) + 1) : "";
-        summary.textContent = "Nowcast" + quarter + ": " + fmt(m.news_nowcast_old) + "% last week, " +
-          fmt(m.news_nowcast_new) + "% this week (" + fmtSigned(change) + " points, annualised).";
+        newsAll = parseTable(text, ["period", "component"]);
+        needCols(newsAll, ["component", "impact"], "wai_news.csv");
+        // The quarters, from the metadata. A file from before there were several
+        // has no period column and is the one quarter news_period names.
+        var arr = function (x, y) { return x === undefined || x === null ? [y] : [].concat(x); };
+        var periods = arr(m.news_periods, m.news_period);
+        var olds = arr(m.news_nowcasts_old, m.news_nowcast_old);
+        var news = arr(m.news_nowcasts_new, m.news_nowcast_new);
+        newsQuarters = periods.map(function (p, k) { return { period: p, old: olds[k], new: news[k] }; })
+          .filter(function (q) {
+            return !("period" in newsAll[0]) || newsAll.some(function (r) { return r.period === q.period; });
+          });
+        if (!newsQuarters.length) throw new Error("wai_news.csv has no rows for the quarters listed");
+        // The running quarter first: it is the one the forecast completes.
+        newsSel = newsQuarters.length - 1;
+        buildNewsButtons();
+        showNewsQuarter();
         panel.hidden = false;
-        renderNews();
+        return fetch("wai_news_history.csv?v=" + bust, { cache: "no-cache" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_news_history.csv");
+            return r.text();
+          })
+          .then(function (t) {
+            newsHist = parseTable(t, ["date", "period", "component"]);
+            needCols(newsHist, ["date", "period", "nowcast_old", "nowcast_new", "component", "impact"],
+                     "wai_news_history.csv");
+          })
+          .catch(function (err) {
+            newsHist = [];
+            if (window.console && console.warn) console.warn("News history not shown: " + err.message);
+          })
+          .then(function () { showNewsQuarter(); });
       })
       .catch(function (err) {
         panel.hidden = true;
@@ -2019,12 +2326,22 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   document.getElementById("show-ind-table").addEventListener("change", function () {
     document.getElementById("ind-tablewrap").hidden = !this.checked;
   });
+  segHandler("news-view-seg", function (btn) { newsView = btn.dataset.nview; }, function () {
+    if (newsQuarters.length) showNewsQuarter();
+  });
+  segHandler("news-quarter-seg", function (btn) { newsSel = Number(btn.dataset.k); }, function () {
+    if (newsQuarters.length) showNewsQuarter();
+  });
   document.getElementById("show-news-table").addEventListener("change", function () {
     document.getElementById("news-tablewrap").hidden = !this.checked;
   });
   document.getElementById("show-band").addEventListener("change", function () { state.band = this.checked; render(); });
   document.getElementById("show-gdp").addEventListener("change", function () { state.gdp = this.checked; render(); });
   document.getElementById("show-waiq").addEventListener("change", function () { state.waiq = this.checked; render(); });
+  document.getElementById("show-fc").addEventListener("change", function () { state.fc = this.checked; render(); });
+  document.getElementById("dl-forecast").addEventListener("click", function () {
+    if (fcRows.length) download("swiss_gdpnow_forecast.csv", toCSV(fcRows));
+  });
   document.getElementById("show-table").addEventListener("change", function () {
     document.getElementById("tablewrap").hidden = !this.checked;
   });
@@ -2056,6 +2373,29 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   // --- load --------------------------------------------------------------
   var bust = new Date().toISOString().slice(0, 10);
 
+  // Never rejects: the forecast is additive, so a 404 or a malformed file leaves
+  // the page as it is without one and must not raise #error-banner.
+  function loadForecast() {
+    return fetch("wai_forecast.csv?v=" + bust, { cache: "no-cache" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_forecast.csv");
+        return r.text();
+      })
+      .then(function (text) {
+        var f = addNotAnnualised(parseCSV(text));
+        var last = rows[rows.length - 1].t;
+        // only weeks after the data, in case the file is from another vintage
+        fcRows = f.filter(function (r) { return r.t > last; });
+        if (fcRows.length && fcRows.length !== f.length) fcRows = [];
+        document.getElementById("show-fc-label").hidden = !fcRows.length;
+        document.getElementById("dl-forecast").hidden = !fcRows.length;
+      })
+      .catch(function (err) {
+        fcRows = [];
+        if (window.console && console.warn) console.warn("Forecast not shown: " + err.message);
+      });
+  }
+
   fetch("wai_meta.json?v=" + bust, { cache: "no-cache" })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (m) { meta = m; })
@@ -2068,6 +2408,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     .then(function (text) {
       rows = addNotAnnualised(parseCSV(text));
       if (!rows.length) throw new Error("wai_data.csv contains no rows");
+      return loadForecast();
+    })
+    .then(function () {
 
       if (meta && meta.sample) {
         var b = document.getElementById("sample-banner");

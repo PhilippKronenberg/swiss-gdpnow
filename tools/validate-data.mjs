@@ -3,8 +3,8 @@
 // Validates wai_data.csv against wai_meta.json, against itself, and against
 // what index.html actually reads. It also validates the additive "measures"
 // files -- wai_contributions.csv, wai_news.csv, wai_series.csv and
-// wai_measures_meta.json -- when they are present, chiefly the identity that
-// per date the contributions sum to wai_qoq.
+// wai_measures_meta.json -- and the forecast, wai_forecast.csv, when they are
+// present, chiefly the identity that per date the contributions sum to wai_qoq.
 //
 // Zero dependencies, deliberately. This repository has no build step and no
 // node_modules, and CI should not be the thing that introduces one. Everything
@@ -285,6 +285,65 @@ function readFlatCsv(path, expectedHeader) {
   return ragged > 0 ? null : { header: head, rows: body };
 }
 
+// ------------------------------------------------------------ wai_forecast.csv
+//
+// The model's forecast past the data, to the end of the quarter after the
+// running one. Additive like the measures files: absent is valid. What would go
+// wrong silently is a forecast that overlaps the data, a band that does not
+// bracket it, or a whole-quarter value sitting on a week that does not end a
+// quarter -- the page would draw all three without complaint.
+
+const FORECAST = "wai_forecast.csv";
+const FORECAST_HEADER = ["date", "wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_yoy",
+                         "wai_index", "wai_qoq_q", "wai_yoy_q"];
+const quarterKey = (d) => `${d.slice(0, 4)}Q${Math.floor((Number(d.slice(5, 7)) - 1) / 3) + 1}`;
+const endsQuarter = (d) => ["03", "06", "09", "12"].includes(d.slice(5, 7)) && d.slice(8, 10) === "28";
+
+if (dateIdx !== -1 && rows.length > 0 && meta.weeks_observed !== undefined) {
+  const lastDate = rows[rows.length - 1][dateIdx];
+  const inQuarter = rows.filter((r) => quarterKey(r[dateIdx]) === quarterKey(lastDate)).length;
+  if (meta.weeks_observed !== inQuarter) {
+    fail(`wai_meta.json weeks_observed=${meta.weeks_observed} but wai_data.csv has ${inQuarter} `
+      + `weeks of ${quarterKey(lastDate)}. The page labels the nowcast with this count.`);
+  }
+}
+
+if (existsSync(FORECAST)) {
+  const f = readFlatCsv(FORECAST, Array.isArray(meta.forecast_columns) ? meta.forecast_columns : FORECAST_HEADER);
+  if (f) {
+    const col = (name) => f.header.indexOf(name);
+    const fd = f.rows.map((r) => r[col("date")]);
+    const lastData = rows.length ? rows[rows.length - 1][dateIdx] : null;
+    if (fd.some((d) => !DATE_RE.test(d))) fail(`${FORECAST} has a date that is not YYYY-MM-DD.`);
+    for (let i = 1; i < fd.length; i++) {
+      if (!(fd[i] > fd[i - 1])) { fail(`${FORECAST} dates are not strictly ascending at row ${i + 2}.`); break; }
+    }
+    if (fd.length === 0) fail(`${FORECAST} has no rows.`);
+    if (lastData && fd.length && !(fd[0] > lastData)) {
+      fail(`${FORECAST} starts at ${fd[0]}, not after wai_data.csv's last week ${lastData}. `
+        + `The forecast must never overlap the data.`);
+    }
+    if (meta.forecast_end !== undefined && meta.forecast_end !== null && fd.length
+        && meta.forecast_end !== fd[fd.length - 1]) {
+      fail(`wai_meta.json forecast_end="${meta.forecast_end}" but ${FORECAST} ends at "${fd[fd.length - 1]}".`);
+    }
+    const [m, lo, hi] = ["wai_qoq", "wai_qoq_lo", "wai_qoq_hi"].map(col);
+    let bad = 0;
+    f.rows.forEach((r) => {
+      if (r[m] === "" || !(num(r[lo]) < num(r[m]) && num(r[m]) < num(r[hi]))) bad++;
+    });
+    if (bad) fail(`${FORECAST}: ${bad} rows where the 95% band does not bracket wai_qoq, or wai_qoq is missing.`);
+    const q = col("wai_qoq_q");
+    const placed = f.rows.filter((r) => r[q] !== "");
+    if (placed.some((r) => !endsQuarter(r[col("date")]))) {
+      fail(`${FORECAST} has a whole-quarter wai_qoq_q on a week that does not end a quarter.`);
+    }
+    if (!placed.length) fail(`${FORECAST} carries no whole-quarter wai_qoq_q.`);
+  }
+} else if (meta.forecast_end) {
+  fail(`wai_meta.json has forecast_end="${meta.forecast_end}" but ${FORECAST} is missing.`);
+}
+
 const MEASURES_META = "wai_measures_meta.json";
 const CONTRIB = "wai_contributions.csv";
 const NEWS = "wai_news.csv";
@@ -420,42 +479,119 @@ if (mmeta && mmeta.news_available === true) {
   if (!existsSync(NEWS)) {
     fail(`${MEASURES_META} says news_available: true but ${NEWS} does not exist.`);
   } else {
-    const n = readFlatCsv(NEWS, ["component", "impact"]);
+    // Long since one block per quarter (period,component,impact); the older
+    // two-column file is one block for news_period.
+    const head = stripBom(readFileSync(NEWS, "utf8"), NEWS).split(/\r?\n/)[0];
+    const long = head.startsWith("period,");
+    const n = readFlatCsv(NEWS, long ? ["period", "component", "impact"] : ["component", "impact"]);
     if (n) {
-      let total = 0;
+      const ci = long ? 1 : 0, ii = long ? 2 : 1;
+      const sums = new Map();
       n.rows.forEach((r, i) => {
-        if (!Number.isFinite(num(r[1]))) {
-          fail(`${NEWS} row ${i + 2}: impact "${r[1]}" is not a finite number.`);
+        if (!Number.isFinite(num(r[ii]))) {
+          fail(`${NEWS} row ${i + 2}: impact "${r[ii]}" is not a finite number.`);
           return;
         }
-        total += num(r[1]);
-        if (components && !components.includes(r[0])) {
-          fail(`${NEWS} row ${i + 2}: component "${r[0]}" is not in ${MEASURES_META} `
+        const p = long ? r[0] : mmeta.news_period;
+        sums.set(p, (sums.get(p) || 0) + num(r[ii]));
+        if (components && !components.includes(r[ci])) {
+          fail(`${NEWS} row ${i + 2}: component "${r[ci]}" is not in ${MEASURES_META} `
             + `"components".`);
         }
       });
-      const old = mmeta.news_nowcast_old, fresh = mmeta.news_nowcast_new;
-      if (typeof old !== "number" || typeof fresh !== "number") {
-        fail(`${MEASURES_META} has news_available: true but news_nowcast_old/new are not `
-          + `both numbers; the news panel's caption reads them.`);
-      } else {
-        const tol = 0.001 * Math.max(n.rows.length, 1);
-        const gap = Math.abs(total - (fresh - old));
-        if (gap > tol) {
-          fail(`${NEWS}: impacts sum to ${total.toFixed(4)} but the revision `
-            + `news_nowcast_new − news_nowcast_old is ${(fresh - old).toFixed(4)} — `
-            + `off by ${gap.toFixed(4)}, past ${tol.toFixed(4)}. The news panel walks `
-            + `from one nowcast to the other through these impacts, so they must add up.`);
-        } else {
-          note(`${NEWS}: ${n.rows.length} impacts sum to ${total.toFixed(4)} against a `
-            + `${(fresh - old).toFixed(4)} revision.`);
-        }
+      const periods = Array.isArray(mmeta.news_periods) ? mmeta.news_periods
+        : (mmeta.news_periods ? [mmeta.news_periods] : [mmeta.news_period]);
+      const olds = [].concat(mmeta.news_nowcasts_old ?? mmeta.news_nowcast_old);
+      const fresh = [].concat(mmeta.news_nowcasts_new ?? mmeta.news_nowcast_new);
+      if (periods[0] !== mmeta.news_period) {
+        fail(`${MEASURES_META}: news_periods starts at "${periods[0]}" but news_period is `
+          + `"${mmeta.news_period}"; the first quarter must be the one news_period names.`);
       }
+      for (const p of sums.keys()) {
+        if (!periods.includes(p)) fail(`${NEWS} has quarter "${p}", which ${MEASURES_META} does not list.`);
+      }
+      periods.forEach((p, k) => {
+        const o = olds[k], f = fresh[k];
+        if (typeof o !== "number" || typeof f !== "number") {
+          fail(`${MEASURES_META} has news_available: true but the old and new nowcast for `
+            + `"${p}" are not both numbers; the news panel's caption reads them.`);
+          return;
+        }
+        const rowsP = long ? n.rows.filter((r) => r[0] === p).length : n.rows.length;
+        if (!rowsP) { fail(`${NEWS} has no rows for quarter "${p}".`); return; }
+        const total = sums.get(p) || 0;
+        const tol = 0.001 * Math.max(rowsP, 1);
+        const gap = Math.abs(total - (f - o));
+        if (gap > tol) {
+          fail(`${NEWS} (${p}): impacts sum to ${total.toFixed(4)} but the revision is `
+            + `${(f - o).toFixed(4)} — off by ${gap.toFixed(4)}, past ${tol.toFixed(4)}. The news `
+            + `panel walks from one nowcast to the other through these impacts, so they must add up.`);
+        } else {
+          note(`${NEWS} (${p}): ${rowsP} impacts sum to ${total.toFixed(4)} against a `
+            + `${(f - o).toFixed(4)} revision.`);
+        }
+      });
     }
   }
 } else if (mmeta && existsSync(NEWS)) {
   note(`${NEWS} exists but ${MEASURES_META} says news_available is not true, so the `
     + `page ignores it. A leftover file from a previous run is the likely cause.`);
+}
+
+// --------------------------------------------------------- wai_news_history.csv
+//
+// The news of every weekly update, one block per update (date, the latest week
+// of data) and quarter (period), for the page's "over the quarter" view. Built
+// by the update pipeline from the published file plus the week's news. Each
+// block must add up to its own revision, carry one old and one new nowcast, and
+// the latest update's blocks must be this week's wai_news.csv.
+
+const NEWS_HISTORY = "wai_news_history.csv";
+if (existsSync(NEWS_HISTORY)) {
+  const h = readFlatCsv(NEWS_HISTORY, ["date", "period", "nowcast_old", "nowcast_new", "component", "impact"]);
+  if (h) {
+    const blocks = new Map();
+    let prev = "";
+    h.rows.forEach((r, i) => {
+      const [date, period, o, f, comp, imp] = r;
+      if (!DATE_RE.test(date) || !DATE_RE.test(period)) fail(`${NEWS_HISTORY} row ${i + 2}: bad date or period.`);
+      if (`${date} ${period}` < prev) fail(`${NEWS_HISTORY} row ${i + 2}: rows are not sorted by date and period.`);
+      prev = `${date} ${period}`;
+      if (![o, f, imp].every((x) => x !== "" && Number.isFinite(num(x)))) {
+        fail(`${NEWS_HISTORY} row ${i + 2}: nowcast_old, nowcast_new and impact must be numbers.`);
+        return;
+      }
+      const key = `${date} ${period}`;
+      const b = blocks.get(key) || { o, f, sum: 0, n: 0, comps: new Set() };
+      if (b.o !== o || b.f !== f) fail(`${NEWS_HISTORY} row ${i + 2}: block ${key} has more than one old or new nowcast.`);
+      if (b.comps.has(comp)) fail(`${NEWS_HISTORY} row ${i + 2}: component "${comp}" twice in block ${key}.`);
+      b.comps.add(comp); b.sum += num(imp); b.n++;
+      blocks.set(key, b);
+    });
+    for (const [key, b] of blocks) {
+      const gap = Math.abs(b.sum - (num(b.f) - num(b.o)));
+      if (gap > 0.001 * b.n) {
+        fail(`${NEWS_HISTORY} block ${key}: impacts sum to ${b.sum.toFixed(4)} but the revision `
+          + `is ${(num(b.f) - num(b.o)).toFixed(4)}.`);
+      }
+    }
+    // the latest update is this week's news
+    if (mmeta && mmeta.news_available === true && existsSync(NEWS) && h.rows.length) {
+      const latest = h.rows[h.rows.length - 1][0];
+      const head = stripBom(readFileSync(NEWS, "utf8"), NEWS).split(/\r?\n/)[0];
+      const n = readFlatCsv(NEWS, head.startsWith("period,") ? ["period", "component", "impact"] : ["component", "impact"]);
+      if (n) {
+        const long = head.startsWith("period,");
+        const want = n.rows.map((r) => `${long ? r[0] : mmeta.news_period} ${r[long ? 1 : 0]} ${num(r[long ? 2 : 1])}`).sort();
+        const got = h.rows.filter((r) => r[0] === latest).map((r) => `${r[1]} ${r[4]} ${num(r[5])}`).sort();
+        if (want.join("|") !== got.join("|")) {
+          fail(`${NEWS_HISTORY}: its latest update, ${latest}, is not this week's ${NEWS}. The `
+            + `pipeline adds the week's news to the history; the two have come apart.`);
+        }
+      }
+    }
+    note(`${NEWS_HISTORY}: ${blocks.size} update-quarter blocks, each adding up to its revision.`);
+  }
 }
 
 // ---------------------------------------------------------------- wai_series.csv

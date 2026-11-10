@@ -21,6 +21,36 @@ published.
 
 ## 2026-11-10
 
+- **Presentation** — The news panel shows every quarter whose GDP SECO has not
+  yet published, with a button for each: until SECO's release, the quarter just
+  ended and the running one. It opens on the running quarter. The text says
+  what the nowcast is: GDP growth over the whole quarter, and for the running
+  quarter one that includes the weeks still to come as the model forecasts
+  them. `wai_news.csv` gains a `period` column, one block per quarter; the page
+  and the validator still read the older two-column file.
+- **Presentation** — A View button switches the news panel between this week's
+  news and **Over the quarter**: one stacked bar per weekly update, the news of
+  that week's releases for the chosen quarter split by group, with the nowcast
+  after each update as a line on a second axis, a key below the chart and a
+  table with one row per update. It reads a new additive file,
+  `wai_news_history.csv` (`date,period,nowcast_old,nowcast_new,component,impact`),
+  which the update pipeline extends every week; it starts with this week's
+  update, so the chart fills in from the next one on.
+- **Presentation** — The nowcast diamond is labelled with what it is: the
+  running quarter **to date**, "Nowcast 2026Q4 (5 of 12 weeks)", averaging the
+  weeks observed so far. It stays on the latest week. The page can now show the
+  model's **forecast**, from a new additive file `wai_forecast.csv`: the weekly
+  index continued as a dashed line with its band to the end of the running
+  quarter, where the chart ends, and a hollow diamond there for the whole
+  quarter, observed and forecast weeks together. A tile, a Forecast checkbox
+  and a download button come with it. All of
+  it appears once the update pipeline publishes the file, and the page is
+  unchanged without it. `wai_data.csv` is unchanged: it never carries forecast
+  weeks.
+- **Presentation** — The news panel's heading names its quarter ("What moved the
+  2026Q3 nowcast this week"), and its text says it is the first quarter whose
+  GDP SECO has not yet published, which is the quarter just ended rather than
+  the running one until SECO's release.
 - **Presentation** — The dashboard is renamed **Swiss GDPNow** and moves to
   <https://philippkronenberg.github.io/swiss-gdpnow/>; the repository is now
   `PhilippKronenberg/swiss-gdpnow`. The old address
