@@ -1139,15 +1139,19 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       plugins: [crosshair],
       options: {
         responsive: true, maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
+        // The week nearest the pointer, and only what is drawn on that week: the
+        // weekly value, published GDP if that week carries it, and a diamond only
+        // on its own week. "index" mode matched the one-point diamond datasets by
+        // position, so every diamond showed up together.
+        interaction: { mode: "nearest", axis: "x", intersect: false },
         animation: false,
         scales: {
           // Half a week of margin, so the first and last markers are not cut by the edge.
           x: { type: "time", time: { tooltipFormat: "d MMM yyyy" },
                min: data.length ? data[0].t - 3.5 * 864e5 : undefined,
-               // The forecast ends on a hollow diamond, which needs more room
-               // than a line end to be drawn whole on a narrow screen.
-               max: data.length ? (forecastShown(data) ? fcRows[fcRows.length - 1].t + 12 * 864e5
+               // The forecast ends on a hollow diamond, which needs room to be
+               // drawn whole and hovered on a narrow screen.
+               max: data.length ? (forecastShown(data) ? fcRows[fcRows.length - 1].t + 21 * 864e5
                                                        : data[data.length - 1].t + 3.5 * 864e5) : undefined,
                grid: { display: false },
                border: { color: css("--border") },
@@ -1165,15 +1169,19 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
             backgroundColor: css("--surface-1"), titleColor: css("--text-primary"),
             bodyColor: css("--text-secondary"), borderColor: css("--border"), borderWidth: 1,
             padding: 10, displayColors: true, cornerRadius: 6,
-            filter: function (item) { return item.dataset.label !== "lo"; },
+            // Bands and the quarterly aggregate stay out of the hover. The latest
+            // week starts the dashed forecast too; it is listed once, as observed.
+            filter: function (item, i, items) {
+              var l = item.dataset.label;
+              if (l === "lo" || /credible band$/.test(l) || l === "Swiss GDPNow, aggregated to quarterly") return false;
+              if (l === "Forecast") return !items.some(function (o) { return o.dataset.label === v.label; });
+              return item.parsed.y !== null && item.parsed.y !== undefined;
+            },
             callbacks: {
               label: function (item) {
-                var y = item.parsed.y;
-                if (y === null || y === undefined) return null;
-                var name = item.dataset.label === "95% credible band" ? "upper bound"
-                  : item.dataset.label === "Forecast, 95% credible band" ? "forecast upper bound"
-                  : item.dataset.label;
-                return name + ": " + qoqText(state.view, y);
+                var l = item.dataset.label;
+                var name = l === v.label ? "Swiss GDPNow" : l;
+                return name + ": " + qoqText(state.view, item.parsed.y);
               }
             }
           }
