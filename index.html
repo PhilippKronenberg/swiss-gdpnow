@@ -1237,7 +1237,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                value: qv(p.value),
                note: p.running ? "quarter to date: the " + p.weeks + " week" + (p.weeks === 1 ? "" : "s") +
                                  " observed so far"
-                               : "quarter ended " + p.date + ", GDP not yet published" };
+                               : "quarter ended " + p.date };
     });
     // The forecast's quarter, whole: the running one completed.
     ncTiles = ncTiles.concat(forecastPoints(VIEWS.qoq).map(function (p) {
