@@ -651,7 +651,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </section>
 
   <p class="caption" id="news-summary"></p>
-  <p class="explain"><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of the chosen quarter's GDP growth, quarter on quarter over the whole quarter, with the data released since the previous one. For the running quarter that nowcast includes the weeks still to come, as the model forecasts them, so a release can move it through the forecast as well as through the weeks already observed. <em>Over the quarter</em> shows one stacked bar per weekly update instead: the news of that week's releases for the chosen quarter, split by group in the same way, with the line giving the nowcast after each update (right-hand axis). Read along the bars, the quarter's nowcast is built up week by week. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
+  <p class="explain"><strong>Reading the news panel.</strong> Every update re-estimates the nowcast of the chosen quarter's GDP growth, quarter on quarter over the whole quarter, with the data released since the previous one. For the running quarter that nowcast includes the weeks still to come, as the model forecasts them, so a release can move it through the forecast as well as through the weeks already observed. <em>Over the quarter</em> shows one stacked bar per weekly update instead: the news of that week's releases for the chosen quarter, split by group in the same way; hovering over a bar shows the nowcast before and after that update. Read along the bars, the quarter's nowcast is built up week by week. Before a release, the model has an expectation of what it will show; the <em>news</em> is the gap between the release and that expectation, and the panel shows how much each group's news moved the nowcast, in percentage points of annualised growth. The pieces add up exactly to the change between the two nowcasts, with the model's parameters held at last week's estimate so that only the data differs.</p>
 
   <div class="tablewrap" id="news-tablewrap" hidden>
     <table id="news-table"><thead></thead><tbody></tbody></table>
@@ -1669,14 +1669,10 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     document.getElementById("news-box").style.height = "380px";
     var labels = ups.map(function (u) { return u.date; });
     var sets = comps.map(function (c) {
-      return { type: "bar", label: compStyle(c).label, yAxisID: "y", order: 2,
+      return { type: "bar", label: compStyle(c).label,
                data: ups.map(function (u) { return c in u.values ? u.values[c] : 0; }),
                backgroundColor: css(compStyle(c).token), borderWidth: 0, barPercentage: 0.8 };
     });
-    sets.push({ type: "line", label: "Nowcast after the update", yAxisID: "y1", order: 1,
-                data: ups.map(function (u) { return u.new; }),
-                borderColor: css("--series-nowcast"), backgroundColor: css("--series-nowcast"),
-                borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0 });
     newsChart = new Chart(document.getElementById("news-chart"), {
       type: "bar",
       data: { labels: labels, datasets: sets },
@@ -1691,11 +1687,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
           y: { stacked: true, grid: { color: css("--grid"), drawTicks: false }, border: { display: false },
                ticks: { color: css("--text-secondary") },
                title: { display: true, color: css("--text-muted"), font: { size: 11 },
-                        text: "News, percentage points" } },
-          y1: { position: "right", grid: { display: false }, border: { display: false },
-                ticks: { color: css("--text-secondary"), callback: function (v) { return v + "%"; } },
-                title: { display: true, color: css("--text-muted"), font: { size: 11 },
-                         text: "Nowcast, % annualised" } }
+                        text: "News, percentage points" } }
         },
         plugins: {
           legend: { display: false },
@@ -1703,13 +1695,11 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
             backgroundColor: css("--surface-1"), titleColor: css("--text-primary"),
             bodyColor: css("--text-secondary"), footerColor: css("--text-secondary"),
             borderColor: css("--border"), borderWidth: 1, padding: 10, cornerRadius: 6,
-            filter: function (item) { return item.dataset.type === "line" || item.parsed.y !== 0; },
+            filter: function (item) { return item.parsed.y !== 0; },
             callbacks: {
               title: function (items) { return "Update with data to " + items[0].label; },
               label: function (item) {
-                return item.dataset.type === "line"
-                  ? item.dataset.label + ": " + fmt(item.parsed.y) + "%"
-                  : item.dataset.label + ": " + fmtSigned(item.parsed.y) + " points";
+                return item.dataset.label + ": " + fmtSigned(item.parsed.y) + " points";
               },
               footer: function (items) {
                 var u = ups[items[0].dataIndex];
@@ -1725,8 +1715,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     leg.innerHTML = comps.map(function (c) {
       return '<span><i class="swatch box" style="background:' + css(compStyle(c).token) + '"></i>' +
              esc(compStyle(c).label) + "</span>";
-    }).join("") + '<span><i class="swatch" style="background:' + css("--series-nowcast") +
-      '"></i>Nowcast after the update (right axis)</span>';
+    }).join("");
     leg.hidden = false;
     document.getElementById("news-chart").setAttribute("aria-label",
       "Stacked bar chart of the news in each weekly update for the " + name + " nowcast, " +
