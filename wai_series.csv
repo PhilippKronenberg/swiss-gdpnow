@@ -1,48 +1,48 @@
 series,name,group,frequency,r2,loading,loading_lo,loading_hi
-hotel_nights,Hotel Overnight Stays,Consumption,12,0.693,0.4807,0.431,0.5346
-ch.fso.rtt.ind.r.noga0801.sa,Retail Sales - Total,Consumption,12,0.1392,0.223,0.1573,0.2888
-stat_einkauf,Non-Online Retail Sales - Swiss-Wide Volume in CHF,Consumption,48,0.0798,0.0812,0.0571,0.1052
-anz_kktrans_ch,In-Person Card Payments - Swiss-Wide Count,Consumption,48,0.0677,0.0735,0.0496,0.0971
-trendecon,Google Search Index - Perceived Economic Situation,Consumption,48,0.0053,0.0318,0.0068,0.0574
-brent_oil,Brent Crude Oil Spot Price,Financial markets,48,0.1022,0.1562,0.1239,0.189
-SWISSMI,Swiss Market Index (SMI) ,Financial markets,48,0.0143,0.0586,0.0232,0.0931
-VIX,Volatility Index (VIX) - Weekly Change,Financial markets,48,0.0116,-0.0526,-0.0911,-0.0154
-chf_neer,Nominal Effective CHF Exchange Rate Index,Financial markets,48,0.0047,-0.032,-0.0664,0.0018
+hotel_nights,Hotel Overnight Stays,Consumption,12,0.6802,0.4716,0.4221,0.5237
+ch.fso.rtt.ind.r.noga0801.sa,Retail Sales - Total,Consumption,12,0.1318,0.2173,0.1519,0.283
+stat_einkauf,Non-Online Retail Sales - Swiss-Wide Volume in CHF,Consumption,48,0.0687,0.0777,0.0527,0.103
+anz_kktrans_ch,In-Person Card Payments - Swiss-Wide Count,Consumption,48,0.0581,0.0703,0.0459,0.0942
+trendecon,Google Search Index - Perceived Economic Situation,Consumption,48,0.0065,0.0357,0.0095,0.0612
+brent_oil,Brent Crude Oil Spot Price,Financial markets,48,0.1038,0.1592,0.126,0.1922
+SWISSMI,Swiss Market Index (SMI) ,Financial markets,48,0.0174,0.0659,0.03,0.102
+VIX,Volatility Index (VIX) - Weekly Change,Financial markets,48,0.0131,-0.0558,-0.0945,-0.0176
+chf_neer,Nominal Effective CHF Exchange Rate Index,Financial markets,48,0.0056,-0.0357,-0.0715,0
 ch.seco.gdp.real.gdp.ssa,Gross Domestic Product - Adjusted for International Sport Events,GDP (target),4,1,1,1,1
-ch.ozd.i.wa.index.re.d11,Switzerland - Import: Total - Nominal SA Deflated by the Import Price Index,International trade,12,0.0746,0.1708,0.1043,0.2352
-ch.ozd.e.wa.index.re.d11,Switzerland - Export: Total - Nominal SA Deflated by the Producer Price Index,International trade,12,0.0717,0.1671,0.1006,0.2326
-Lkw-Maut-Fahrleistungsindex_DE,Truck-Toll Mileage Index - Germany,International trade,48,0.041,0.0834,0.0543,0.1119
-rhine_cargo,Swiss Rhine Ports - Total Cargo Handled,International trade,12,5e-04,-0.0135,-0.0842,0.0572
-unemployed,Registered Unemployed,Labour market,12,0.2416,-0.2587,-0.2892,-0.2267
-jobtracker_total,Online Job Postings - Swiss Job Tracker Total Index,Labour market,48,0.2278,0.1461,0.108,0.1839
-Arbeitsmarkt,Google Search Index - Perceived Labour Market Situation,Labour market,48,0.0025,0.021,-0.0092,0.0507
-zrh_airport_arrivals,Total Flight Arrivals - Zurich Airport,Mobility,48,0.5385,0.2212,0.1956,0.2472
-oev_freq_hardbruecke,Public Transport Passenger Frequency - Zurich Hardbruecke,Mobility,48,0.0846,0.0807,0.0494,0.1116
-aufkommen_miv,Private Transport Frequency - Important Counting Stations - Zurich,Mobility,48,0.049,0.0842,0.06,0.1083
-traffic_PW,Passenger Car Frequency - Counting Stations on Major Swiss Motorways,Mobility,48,0.0455,0.0916,0.0635,0.1192
-term_spread,Term Spread - 10-Year Confederation Yield minus SARON - Monthly Change,Money and interest rates,12,0.0043,-0.0286,-0.0937,0.0383
-sight_deposits,Sight Deposits of Domestic Banks at the SNB,Money and interest rates,48,0.0023,-0.0169,-0.0606,0.0271
-snb_policy_rate,SNB Policy Rate - Weekly Change,Money and interest rates,48,0,-3e-04,-0.0361,0.0356
-ch.kof.bts_total.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - All Industries,Output and production,12,0.2645,0.2232,0.1612,0.2826
-ch.kof.aiu.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Project Engineering,Output and production,12,0.1586,0.2079,0.1503,0.2659
-ch.kof.bau.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Construction,Output and production,12,0.1562,0.1967,0.1349,0.2575
-ch.kof.fvu.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Finance & Insurance,Output and production,12,0.1029,0.1338,0.0696,0.1961
-ch.kof.inu.ng08.fx.sector_mig.cap_gd.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Investment Goods ,Output and production,12,0.0787,0.1235,0.0598,0.1876
-ch.kof.inu.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing,Output and production,12,0.0704,0.1192,0.0542,0.1842
-SWPMIPROQ,Purchasing Managers Index - Manufacturing Sector - Output,Output and production,12,0.0656,0.0801,0.0407,0.1194
-ch.kof.inu.ng08.fx.sector_mig.imd_gd.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Intermediate Goods - ,Output and production,12,0.061,0.1118,0.0485,0.1751
-bankruptcies_ch,Bankruptcy Openings - Switzerland,Output and production,48,0.051,0.0746,0.0361,0.1128
-ch.kof.inu.ng08.fx.sector_mig.cons_gd.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Consumption Goods,Output and production,12,0.0465,0.1009,0.0384,0.1612
-SWPMIORDQ,Purchasing Managers Index - Manufacturing Sector - Backlog of Orders,Output and production,12,0.0426,0.0543,0.0229,0.0848
-ch.kof.inu.ng08.fx.sector_mig.cons_dr.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Durable Goods,Output and production,12,0.0319,0.084,0.0219,0.1453
-SWPURCHSQ,Purchasing Managers Index - Manufacturing Sector,Output and production,12,0.0238,0.0352,0.0129,0.0576
-traffic_LW,Truck Frequency - Counting Stations on Major Swiss Motorways,Output and production,48,0.0093,0.0413,0.0164,0.0659
-electricity_out,Energy Consumed by Swiss End Users,Output and production,48,0.0063,0.0335,0.0074,0.0596
-electricity_export,Physical Electricity Exports - All Borders,Output and production,48,0.0024,0.0146,-0.0115,0.0405
-air_pm10,Particulate Matter PM10 - City of Zurich,Output and production,48,0.0016,-0.0192,-0.04,0.0015
-electricity_in,Energy Production in Switzerland,Output and production,48,0.001,0.012,-0.0162,0.0397
-electricity_import,Physical Electricity Imports - All Borders,Output and production,48,8e-04,0.0096,-0.0167,0.0359
-air_no2,Nitrogen Dioxide - Nine Swiss Cities,Output and production,48,0,-0.0014,-0.0217,0.0184
-SWPROPRCE,Producer Prices Index,Prices,12,0.0243,0.0595,-0.0043,0.1221
-SWCONPRCE,Consumer Price Index - Total,Prices,12,0.0063,0.0341,-0.0263,0.097
-SWCPCOREF,Consumer Price Index - Excl. Energy - Fresh & Seasonal Products,Prices,12,0.0023,-0.026,-0.0884,0.0368
+ch.ozd.i.wa.index.re.d11,Switzerland - Import: Total - Nominal SA Deflated by the Import Price Index,International trade,12,0.0719,0.1674,0.1003,0.2327
+ch.ozd.e.wa.index.re.d11,Switzerland - Export: Total - Nominal SA Deflated by the Producer Price Index,International trade,12,0.0717,0.1669,0.1014,0.2325
+Lkw-Maut-Fahrleistungsindex_DE,Truck-Toll Mileage Index - Germany,International trade,48,0.039,0.0825,0.0529,0.112
+rhine_cargo,Swiss Rhine Ports - Total Cargo Handled,International trade,12,7e-04,-0.0163,-0.0866,0.0557
+unemployed,Registered Unemployed,Labour market,12,0.2412,-0.2597,-0.291,-0.2284
+jobtracker_total,Online Job Postings - Swiss Job Tracker Total Index,Labour market,48,0.2198,0.1434,0.104,0.1836
+Arbeitsmarkt,Google Search Index - Perceived Labour Market Situation,Labour market,48,0.0031,0.0244,-0.006,0.0548
+zrh_airport_arrivals,Total Flight Arrivals - Zurich Airport,Mobility,48,0.5078,0.2174,0.1897,0.2449
+oev_freq_hardbruecke,Public Transport Passenger Frequency - Zurich Hardbruecke,Mobility,48,0.0746,0.0778,0.0451,0.1095
+aufkommen_miv,Private Transport Frequency - Important Counting Stations - Zurich,Mobility,48,0.0425,0.081,0.0567,0.1056
+traffic_PW,Passenger Car Frequency - Counting Stations on Major Swiss Motorways,Mobility,48,0.0398,0.0872,0.0592,0.1149
+term_spread,Term Spread - 10-Year Confederation Yield minus SARON - Monthly Change,Money and interest rates,12,0.004,-0.0275,-0.0914,0.038
+sight_deposits,Sight Deposits of Domestic Banks at the SNB,Money and interest rates,48,0.0025,-0.0181,-0.0638,0.0283
+snb_policy_rate,SNB Policy Rate - Weekly Change,Money and interest rates,48,0,-4e-04,-0.0373,0.0366
+ch.kof.bts_total.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - All Industries,Output and production,12,0.2753,0.229,0.1671,0.289
+ch.kof.aiu.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Project Engineering,Output and production,12,0.1638,0.2113,0.1544,0.2693
+ch.kof.bau.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Construction,Output and production,12,0.1607,0.2018,0.1404,0.2631
+ch.kof.fvu.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Finance & Insurance,Output and production,12,0.1057,0.1368,0.0741,0.1975
+ch.kof.inu.ng08.fx.sector_mig.cap_gd.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Investment Goods ,Output and production,12,0.0808,0.1262,0.061,0.1912
+ch.kof.inu.ng08.fx.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing,Output and production,12,0.0727,0.1211,0.0579,0.1844
+SWPMIPROQ,Purchasing Managers Index - Manufacturing Sector - Output,Output and production,12,0.0676,0.0825,0.043,0.1229
+ch.kof.inu.ng08.fx.sector_mig.imd_gd.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Intermediate Goods - ,Output and production,12,0.0634,0.1148,0.051,0.1787
+bankruptcies_ch,Bankruptcy Openings - Switzerland,Output and production,48,0.0497,0.0748,0.0362,0.1128
+ch.kof.inu.ng08.fx.sector_mig.cons_gd.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Consumption Goods,Output and production,12,0.0471,0.102,0.0393,0.165
+SWPMIORDQ,Purchasing Managers Index - Manufacturing Sector - Backlog of Orders,Output and production,12,0.0443,0.0564,0.0243,0.0879
+ch.kof.inu.ng08.fx.sector_mig.cons_dr.q_ql_ass_bs.balance.d11,Business Situation Assessment - Manufacturing Durable Goods,Output and production,12,0.0334,0.0859,0.0237,0.1473
+SWPURCHSQ,Purchasing Managers Index - Manufacturing Sector,Output and production,12,0.0247,0.0364,0.0139,0.0593
+traffic_LW,Truck Frequency - Counting Stations on Major Swiss Motorways,Output and production,48,0.0084,0.0395,0.014,0.0648
+electricity_out,Energy Consumed by Swiss End Users,Output and production,48,0.0053,0.0316,0.005,0.0575
+electricity_export,Physical Electricity Exports - All Borders,Output and production,48,0.0019,0.0131,-0.0136,0.0405
+air_pm10,Particulate Matter PM10 - City of Zurich,Output and production,48,0.0014,-0.0179,-0.0388,0.003
+electricity_in,Energy Production in Switzerland,Output and production,48,8e-04,0.0112,-0.0172,0.0394
+electricity_import,Physical Electricity Imports - All Borders,Output and production,48,5e-04,0.0087,-0.0176,0.0353
+air_no2,Nitrogen Dioxide - Nine Swiss Cities,Output and production,48,0,-0.0013,-0.0226,0.0197
+SWPROPRCE,Producer Prices Index,Prices,12,0.0258,0.0629,-0.0016,0.1262
+SWCONPRCE,Consumer Price Index - Total,Prices,12,0.0068,0.0367,-0.0267,0.0992
+SWCPCOREF,Consumer Price Index - Excl. Energy - Fresh & Seasonal Products,Prices,12,0.0022,-0.0252,-0.0878,0.0369
