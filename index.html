@@ -1249,8 +1249,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       : [{ label: "Swiss GDPNow, latest quarter, QoQ (annualised)", value: qrow ? qv(qrow.wai_qoq_q) : "–",
            note: qrow ? "quarter ending " + qrow.date : "" }]).concat([
       { label: "Latest week, QoQ (annualised)", value: qv(last.wai_qoq),
-        note: "95% band " + fmt(last.wai_qoq_lo_notann) + " to " +
-              fmt(last.wai_qoq_hi_notann) + " (ann. " + fmt(last.wai_qoq_lo) + " to " + fmt(last.wai_qoq_hi) + ")" },
+        note: "" },
       { label: "Swiss GDPNow, year-over-year", value: fmt(last.wai_yoy) + "%",
         note: "growth over the last 12 months" },
       { label: "Level index", value: fmt(last.wai_index, 1),
