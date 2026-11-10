@@ -2408,7 +2408,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       // lie days ahead of the last observation.
       var asof = rows[rows.length - 1].date;
       document.getElementById("asof").textContent =
-        "Data to " + asof + (meta && meta.run_timestamp ? " · updated " + meta.run_timestamp.slice(0, 10) : "");
+        "Data to " + asof;
       document.getElementById("foot-meta").textContent =
         "Produced by mfbdfm" + (meta && meta.mfbdfm_version ? " " + meta.mfbdfm_version : "");
 
