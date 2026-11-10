@@ -25,10 +25,10 @@ published.
   running quarter **to date**, "Nowcast 2026Q4 (5 of 12 weeks)", averaging the
   weeks observed so far. It stays on the latest week. The page can now show the
   model's **forecast**, from a new additive file `wai_forecast.csv`: the weekly
-  index continued as a dashed line with its band to the end of the following
-  quarter, and hollow diamonds at the end of the running quarter (the whole
-  quarter, observed and forecast weeks together) and of the next one. Tiles for
-  both quarters, a Forecast checkbox and a download button come with it. All of
+  index continued as a dashed line with its band to the end of the running
+  quarter, where the chart ends, and a hollow diamond there for the whole
+  quarter, observed and forecast weeks together. A tile, a Forecast checkbox
+  and a download button come with it. All of
   it appears once the update pipeline publishes the file, and the page is
   unchanged without it. `wai_data.csv` is unchanged: it never carries forecast
   weeks.

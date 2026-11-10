@@ -480,7 +480,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <div class="legend" id="legend"></div>
 </section>
 <p class="explain"><strong>Why two Swiss GDPNow lines on the growth charts.</strong> The blue line is the weekly index: an instantaneous annualised growth rate, read every week. Quarterly GDP is a <em>flow</em> &mdash; the average level of activity across the whole quarter &mdash; so the like-for-like comparison is the green series, the weekly index averaged over each quarter. Compared this way, Swiss GDPNow matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points across 143 quarters.</p>
-<p class="explain"><strong>Nowcast and forecast.</strong> The filled red diamond is the <em>nowcast</em>: the running quarter's growth over the weeks observed so far, on the latest week, and labelled with how many of the quarter's 12 weeks that is. Early in a quarter it rests on few weeks and moves with each one. The dashed line continues the weekly index past the data, as the model forecasts it, to the end of the following quarter. The hollow diamonds average the observed and the forecast weeks together and so give each quarter's growth as GDP will measure it: one at the end of the running quarter and one at the end of the next. The forecast's band widens with the horizon.</p>
+<p class="explain"><strong>Nowcast and forecast.</strong> The filled red diamond is the <em>nowcast</em>: the running quarter's growth over the weeks observed so far, on the latest week, and labelled with how many of the quarter's 12 weeks that is. Early in a quarter it rests on few weeks and moves with each one. The dashed line continues the weekly index past the data, as the model forecasts it, to the end of the running quarter. The hollow diamond there averages the observed and the forecast weeks together and so gives the whole quarter's growth as GDP will measure it. The forecast's band widens with the horizon.</p>
 
 <div class="tablewrap" id="tablewrap" hidden>
   <table id="table"><thead></thead><tbody></tbody></table>
@@ -758,7 +758,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   var cstate = { years: 5, since: null };
   var rows = [], meta = null, chart = null;
   // wai_forecast.csv: the weeks past the data, as the model forecasts them, to the
-  // end of the quarter after the running one. Additive: empty when the file is
+  // end of the running quarter. Additive: empty when the file is
   // absent, and then the page is exactly what it was without it.
   var fcRows = [];
   var contribRows = [], measMeta = null, contribChart = null;
@@ -1226,7 +1226,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                                  " observed so far; data to " + last.date
                                : "quarter ended " + p.date + ", GDP not yet published; from data to " + last.date };
     });
-    // The forecast's quarters, whole: the running one completed, and the next.
+    // The forecast's quarter, whole: the running one completed.
     ncTiles = ncTiles.concat(forecastPoints(VIEWS.qoq).map(function (p) {
       return { label: "Forecast " + p.quarter + ", whole quarter, QoQ (annualised)", value: qv(p.value),
                note: (p.observed ? p.observed + " weeks observed, " + (wpq - p.observed) + " forecast"
