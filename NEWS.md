@@ -1,9 +1,9 @@
-# wai-website
+# swiss-gdpnow
 
 What changed on the published dashboard, and when.
 
 There are no version numbers here. A merge to `main` deploys to
-<https://philippkronenberg.github.io/wai-website/> straight away, so what is
+<https://philippkronenberg.github.io/swiss-gdpnow/> straight away, so what is
 live is always the top of this file. Entries are dated by the day the change
 reached `main`, newest first.
 
@@ -21,6 +21,13 @@ published.
 
 ## 2026-11-10
 
+- **Presentation** — The dashboard is renamed **Swiss GDPNow** and moves to
+  <https://philippkronenberg.github.io/swiss-gdpnow/>; the repository is now
+  `PhilippKronenberg/swiss-gdpnow`. The old address
+  (`philippkronenberg.github.io/wai-website/`) no longer works. Every mention of
+  the Weekly Activity Index (WAI) on the page now uses the new name, and the
+  downloads are named `swiss_gdpnow_*.csv`. The data files keep their `wai_*`
+  names, and the numbers did not change.
 - **Presentation** — The indicator panel opens on the loadings, with the Loading
   button first and R² second. The news summary sits below its chart and is one
   sentence; the captions under the indicator charts are shorter.

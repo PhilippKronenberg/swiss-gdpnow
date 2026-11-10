@@ -2,7 +2,7 @@ Creative Commons Attribution 4.0 International (CC BY 4.0)
 
 Copyright (c) 2026 Philipp Kronenberg
 
-The published Weekly Activity Index data in this repository -- wai_data.csv and
+The published Swiss GDPNow data in this repository -- wai_data.csv and
 wai_meta.json -- is licensed under the Creative Commons Attribution 4.0
 International License.
 
@@ -15,8 +15,8 @@ Human-readable summary: https://creativecommons.org/licenses/by/4.0/
 
 Suggested attribution:
 
-  Weekly Activity Index (WAI), Philipp Kronenberg, CC BY 4.0.
-  https://philippkronenberg.github.io/wai-website/
+  Swiss GDPNow, Philipp Kronenberg, CC BY 4.0.
+  https://philippkronenberg.github.io/swiss-gdpnow/
   Methodology: Kronenberg (2026), Swiss Journal of Economics and Statistics,
   162:10, https://doi.org/10.1186/s41937-026-00157-w
 
