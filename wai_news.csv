@@ -1,10 +1,19 @@
-component,impact
-Output and production,-0.0171
-Labour market,-0.0131
-Financial markets,-0.0112
-Consumption,-0.0026
-Mobility,-0.0012
-International trade,-3e-04
-Prices,1e-04
-Money and interest rates,1e-04
-GDP (target),0
+period,component,impact
+2026-07-07,Output and production,-0.0172
+2026-07-07,Labour market,-0.0138
+2026-07-07,Consumption,0.0113
+2026-07-07,Financial markets,-0.0098
+2026-07-07,Mobility,0.0061
+2026-07-07,International trade,-2e-04
+2026-07-07,Money and interest rates,1e-04
+2026-07-07,Prices,0
+2026-07-07,GDP (target),0
+2026-10-07,Financial markets,-0.5091
+2026-10-07,Labour market,0.2198
+2026-10-07,Consumption,0.199
+2026-10-07,Output and production,-0.1804
+2026-10-07,Mobility,0.1323
+2026-10-07,Prices,0.0298
+2026-10-07,International trade,-0.0067
+2026-10-07,Money and interest rates,0.0061
+2026-10-07,GDP (target),0

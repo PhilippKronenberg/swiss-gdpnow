@@ -5,6 +5,35 @@
   "contributions_unit": "percentage points of wai_qoq (annualised quarter-on-quarter growth, %)",
   "news_unit": "percentage points of the annualised quarterly GDP nowcast",
   "loading_scale": "standardised series",
-  "components": ["Consumption", "Financial markets", "GDP (target)", "International trade", "Labour market", "Mobility", "Money and interest rates", "Output and production", "parameter_uncertainty", "Prices", "trend"],
-  "news_available": false
+  "components": [
+    "Consumption",
+    "Financial markets",
+    "GDP (target)",
+    "International trade",
+    "Labour market",
+    "Mobility",
+    "Money and interest rates",
+    "Output and production",
+    "parameter_uncertainty",
+    "Prices",
+    "trend"
+  ],
+  "news_available": true,
+  "news_period": "2026-07-07",
+  "news_nowcast_old": 2.9943,
+  "news_nowcast_new": 2.9707,
+  "news_old_vintage": "2026-10-28",
+  "news_new_obs": 40,
+  "news_periods": [
+    "2026-07-07",
+    "2026-10-07"
+  ],
+  "news_nowcasts_old": [
+    2.9943,
+    2.735
+  ],
+  "news_nowcasts_new": [
+    2.9707,
+    2.6257
+  ]
 }
