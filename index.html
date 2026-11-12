@@ -440,7 +440,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 
 <section class="notes about" aria-labelledby="about-title">
   <h2 id="about-title">About the index</h2>
-  <p>Swiss GDPNow extracts a single dynamic factor from weekly, monthly and quarterly Swiss indicators. Missing and mixed-frequency observations are handled by data augmentation, the state equation carries stochastic volatility so crisis periods are not smoothed away, and the factor's loading on GDP is fixed at one — which is what makes the index interpretable as a GDP growth rate rather than an abstract index.</p>
+  <p>Swiss GDPNow is a weekly estimate of Swiss GDP growth. Official GDP comes once a quarter, about two months after the quarter ends, and most business cycle indicators are monthly and measured on their own abstract scale. Swiss GDPNow combines 44 weekly, monthly and quarterly series in one Bayesian mixed-frequency dynamic factor model.</p>
+  <p>What is new is that the index is tied to GDP itself. Its loading on GDP is fixed at one, so it reads directly as GDP growth in percent rather than as a generic activity index, and averaged over a quarter it reproduces published GDP. The model handles missing values and publication delays within the estimation. Stochastic volatility lets it follow sudden swings, such as the COVID-19 lockdown, instead of smoothing them away.</p>
+  <p>This makes it a tool for following the economy as it happens: it shows the timing, depth and recovery of a shock within the quarter, which monthly and quarterly indicators cannot.</p>
 </section>
 
 <h2 class="panel-title">Forecast</h2>
