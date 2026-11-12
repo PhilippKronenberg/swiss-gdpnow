@@ -348,7 +348,30 @@ th { color: var(--brand); font-weight: 600; font-size: 0.82rem; text-transform: 
 section.drivers { margin-top: 40px; }
 section.drivers[hidden] { display: none; }
 section.drivers h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 8px; font-weight: 650; }
-section.drivers p.lede { font-size: 1rem; color: var(--text-secondary); margin-bottom: 14px; }
+h2.panel-title { font-size: 1.2rem; color: var(--brand); margin: 8px 0; font-weight: 650; }
+
+/* The explanation of each figure sits behind an "i" button in its controls
+   panel: shown on hover, and on focus, so a tap or the keyboard opens it too.
+   The ::before strip bridges the gap to the button, so the pointer can move
+   onto the box without it closing. */
+.info { position: relative; margin-left: auto; }
+.info-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface-1); color: var(--brand); cursor: help;
+  font: italic 600 0.95rem/1 Georgia, "Times New Roman", serif;
+}
+.info-btn:hover, .info-btn:focus-visible { border-color: var(--brand); }
+.info-pop {
+  display: none; position: absolute; right: 0; top: calc(100% + 8px); z-index: 30;
+  width: min(360px, calc(100vw - 48px)); padding: 12px 14px;
+  background: var(--surface-1); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  font-size: 0.9rem; line-height: 1.45; text-align: left;
+}
+.info-pop::before { content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 9px; }
+.info-pop p + p { margin-top: 6px; }
+.info:hover .info-pop, .info:focus-within .info-pop { display: block; }
 section.drivers .legend { gap: 10px 16px; font-size: 0.9rem; }
 .caption { font-size: 0.85rem; color: var(--text-muted); margin-top: 10px; }
 
@@ -358,7 +381,6 @@ section.notes h2 { font-size: 1.2rem; color: var(--brand); margin-bottom: 8px; f
 section.notes p { margin-bottom: 12px; }
 section.notes a { color: var(--link); }
 section.notes.about { margin-top: 8px; margin-bottom: 20px; }
-p.explain { font-size: 0.95rem; color: var(--text-secondary); margin: 8px 0 14px; }
 footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.88rem; color: var(--text-muted); }
 footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-secondary); }
 </style>
@@ -377,7 +399,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     <div>
       <h1>Swiss GDPNow</h1>
       <p class="subtitle">A high-frequency indicator of Swiss GDP growth, estimated with a mixed-frequency Bayesian dynamic factor model. The factor is anchored to GDP, so it reads directly as a GDP growth rate.</p>
-      <p class="byline">By Philipp Kronenberg</p>
+      <p class="byline">By Philipp Kronenberg, PhD</p>
       <p class="asof" id="asof">Loading…</p>
     </div>
     <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch colour theme">Theme</button>
@@ -421,6 +443,8 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <p>Swiss GDPNow extracts a single dynamic factor from weekly, monthly and quarterly Swiss indicators. Missing and mixed-frequency observations are handled by data augmentation, the state equation carries stochastic volatility so crisis periods are not smoothed away, and the factor's loading on GDP is fixed at one — which is what makes the index interpretable as a GDP growth rate rather than an abstract index.</p>
 </section>
 
+<h2 class="panel-title">Forecast</h2>
+
 <section class="controls" aria-label="Chart controls">
   <div class="ctl-group">
     <span class="ctl-label" id="lbl-view">View</span>
@@ -450,6 +474,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <label class="check"><input type="checkbox" id="show-waiq" checked> Weekly Nowcast, quarterly</label>
   <label class="check" id="show-fc-label" hidden><input type="checkbox" id="show-fc" checked> Forecast</label>
   <label class="check"><input type="checkbox" id="show-table"> Data table</label>
+  <div class="info">
+    <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-main">i</button>
+    <div class="info-pop" role="tooltip" id="info-main">
+      <p>The blue line is each week's growth rate. The green line averages it over each quarter, as GDP does, and matches published GDP (correlation 1.000, error 0.04 points over 143 quarters).</p>
+      <p>The filled diamond is the nowcast: the running quarter's growth over the weeks observed so far. The dashed line is the model's forecast to the end of the quarter, and the hollow diamond the whole quarter's growth.</p>
+    </div>
+  </div>
   <div class="range-row">
     <span class="ctl-label">Dates</span>
     <div class="range-slider" id="range-slider">
@@ -479,8 +510,6 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </canvas></div>
   <div class="legend" id="legend"></div>
 </section>
-<p class="explain"><strong>Why two lines on the growth charts.</strong> The blue line is the weekly nowcast: the growth rate of each week. GDP measures the average activity over a whole quarter, so the green line averages the weekly nowcast over each quarter to compare it with GDP. Measured this way, it matches published GDP with a correlation of 1.000 and a root-mean-square error of 0.04 percentage points over 143 quarters.</p>
-<p class="explain"><strong>Nowcast and forecast.</strong> The filled red diamond is the <em>nowcast</em>: the running quarter's growth over the weeks observed so far, on the latest week, and labelled with how many of the quarter's 12 weeks that is. Early in a quarter it rests on few weeks and moves with each one. The dashed line continues the weekly index past the data, as the model forecasts it, to the end of the running quarter. The hollow diamond there averages the observed and the forecast weeks together and so gives the whole quarter's growth as GDP will measure it. The forecast's band widens with the horizon.</p>
 
 <div class="tablewrap" id="tablewrap" hidden>
   <table id="table"><thead></thead><tbody></tbody></table>
@@ -502,11 +531,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
      without them, so a 404 here is a missing panel rather than a broken page.
      It must NOT raise #error-banner, which says the dashboard failed to load. -->
 <section class="drivers" id="drivers" aria-labelledby="drivers-title" hidden>
-  <h2 id="drivers-title">What drives the index</h2>
-  <p class="lede">This chart shows which groups of indicators drive weekly Swiss GDPNow.
-  The dashed line is the long-run average growth. Each bar shows how much a group
-  pushed growth above or below that average in a given week. Added together, the
-  average and the bars give Swiss GDPNow (solid line).</p>
+  <h2 id="drivers-title">Contributions</h2>
 
   <section class="controls" aria-label="Contributions chart controls">
     <div class="ctl-group">
@@ -531,6 +556,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       </div>
     </div>
     <label class="check"><input type="checkbox" id="show-contrib-table"> Contributions table</label>
+    <div class="info">
+      <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-contrib">i</button>
+      <div class="info-pop" role="tooltip" id="info-contrib">
+        <p>The dashed line is the long-run average growth. Each bar shows how much a group of indicators pushed growth above or below it; average plus bars gives the weekly nowcast (solid line).</p>
+        <p>The grey bar is the part no group can be credited with, mainly estimation uncertainty.</p>
+      </div>
+    </div>
     <div class="range-row">
       <span class="ctl-label">Dates</span>
       <div class="range-slider" id="contrib-range-slider">
@@ -556,7 +588,6 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </section>
 
   <p class="caption" id="contrib-caption"></p>
-  <p class="explain"><strong>Reading the contributions panel.</strong> In every week, the long-run average growth plus the bars gives exactly that week's growth rate, so the bars show why growth was above or below its average. The same holds for QoQ not annualised. Nine bars are groups of indicators, one of them published GDP itself. The grey bar, the <em>unexplained remainder</em>, is the part that cannot be assigned to a group, mainly estimation uncertainty. It is small in quiet periods and larger in volatile ones.</p>
 
   <div class="tablewrap" id="contrib-tablewrap" hidden>
     <table id="contrib-table"><thead></thead><tbody></tbody></table>
@@ -571,12 +602,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 <!-- Same contract as #drivers: hidden until its file loads, never the error
      banner. It also needs wai_series.csv for the names and groups. -->
 <section class="drivers" id="indicators" aria-labelledby="indicators-title" hidden>
-  <h2 id="indicators-title">Which indicators drive the index</h2>
-  <p class="lede">This chart breaks the groups above down into single indicators.
-  Each bar shows how much one indicator pushed growth above or below the average.
-  The bars of all indicators in a group add up to that group's bar in the chart
-  above. An indicator can have a bar even without new data: many are published
-  with a delay, and until then the model still draws on what they last showed.</p>
+  <h2 id="indicators-title">Indicator Contributions</h2>
 
   <section class="controls" aria-label="Indicator contributions controls">
     <div class="ctl-group">
@@ -588,6 +614,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       <select class="ctl-select" id="ind-group"></select>
     </div>
     <label class="check"><input type="checkbox" id="show-ind-table"> Indicator table</label>
+    <div class="info">
+      <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-ind">i</button>
+      <div class="info-pop" role="tooltip" id="info-ind">
+        <p>The groups above, broken down into single indicators. The bars in a group add up to that group's bar.</p>
+        <p>An indicator can contribute without new data: until its next release, the model uses what it last showed.</p>
+      </div>
+    </div>
   </section>
 
   <section class="chart-card" aria-label="Contributions of the single indicators">
@@ -618,11 +651,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
      is information a reader should get rather than a panel that silently goes
      missing. -->
 <section class="drivers" id="news" aria-labelledby="news-title" hidden>
-  <h2 id="news-title">What moved the nowcast this week</h2>
-  <p class="lede">Each week brings new releases. Measured against what the model
-  expected them to be, they move the nowcast of GDP growth for a quarter that
-  has not yet been published: growth over the <em>whole</em> quarter, as GDP
-  measures it, not the rate of a single week.</p>
+  <h2 id="news-title">News</h2>
 
   <section class="controls" aria-label="News controls">
     <!-- Filled from wai_measures_meta.json's news_periods, one button per
@@ -641,6 +670,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       <div class="seg" role="group" aria-labelledby="lbl-nquarter" id="news-quarter-seg"></div>
     </div>
     <label class="check"><input type="checkbox" id="show-news-table"> News table</label>
+    <div class="info">
+      <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-news">i</button>
+      <div class="info-pop" role="tooltip" id="info-news">
+        <p>The news is the gap between a new release and what the model expected. The bars show how much each group's news moved the quarter's GDP nowcast, in points of annualised growth, and add up to the change since last week.</p>
+        <p><em>Over the quarter</em> shows one bar per weekly update.</p>
+      </div>
+    </div>
   </section>
   <section class="chart-card" id="news-card" aria-label="News: impact of this week's releases on the nowcast">
     <div class="chart-box" id="news-box"><canvas id="news-chart" role="img"
@@ -654,7 +690,6 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </section>
 
   <p class="caption" id="news-summary"></p>
-  <p class="explain"><strong>Reading the news panel.</strong> Before each release the model expects a value; the <em>news</em> is the gap between the release and that expectation. The bars show how much each group's news moved the chosen quarter's nowcast, in percentage points of annualised growth, and add up exactly to the change from last week's nowcast, with the model's parameters held at last week's estimate. For the running quarter the nowcast includes the model's forecast of the weeks still to come. <em>Over the quarter</em> shows one bar per weekly update, so the nowcast can be followed as it builds up.</p>
 
   <div class="tablewrap" id="news-tablewrap" hidden>
     <table id="news-table"><thead></thead><tbody></tbody></table>
@@ -663,13 +698,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 </section>
 
 <section class="drivers" id="series" aria-labelledby="series-title" hidden>
-  <h2 id="series-title">How each indicator relates to the index</h2>
-  <p class="lede">The index is the common movement of all its input series.
-  The <em>loading</em> is how strongly the series moves with the index, with its
-  95% credible interval. It is standardised by how each series aggregates the
-  weekly index, with GDP at 1, so that loadings compare across weekly, monthly and
-  quarterly series. <em>R²</em> is the share of a series' own variation that this
-  common movement explains, from 0 to 1.</p>
+  <h2 id="series-title">Factor Loadings</h2>
 
   <section class="controls" aria-label="Series chart controls">
     <div class="ctl-group">
@@ -680,6 +709,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       </div>
     </div>
     <label class="check"><input type="checkbox" id="show-series-table"> Series table</label>
+    <div class="info">
+      <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-series">i</button>
+      <div class="info-pop" role="tooltip" id="info-series">
+        <p>The <em>loading</em> is how strongly a series moves with the index, with its 95% credible interval, scaled so that GDP is 1. GDP is not shown: its loading is fixed at 1.</p>
+        <p><em>R²</em> is the share of a series' variation the index explains. A low value is normal for a noisy weekly series.</p>
+      </div>
+    </div>
   </section>
 
   <section class="chart-card" aria-label="R-squared and loadings of the input series">
@@ -693,7 +729,6 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   </section>
 
   <p class="caption" id="series-caption"></p>
-  <p class="explain"><strong>Reading the series panel.</strong> <em>R²</em> says how much of an indicator's own week-to-week variation the common factor explains; a low value is normal for a noisy weekly series and does not mean the series is useless, since the model weighs each one by how informative it is. The <em>loading</em> says how strongly, and in which direction, the series moves with the factor, with a 95% credible interval; an interval that excludes zero means the series reliably co-moves with activity. Published GDP is not charted: its loading is fixed at one, which is what anchors the index to GDP.</p>
 
   <div class="tablewrap" id="series-tablewrap" hidden>
     <table id="series-table"><thead></thead><tbody></tbody></table>
@@ -1262,9 +1297,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       { label: "Latest week, QoQ (annualised)", value: qv(last.wai_qoq),
         note: "" },
       { label: "Latest week, YoY", value: fmt(last.wai_yoy) + "%",
-        note: "growth over the last 12 months" },
-      { label: "Level index", value: fmt(last.wai_index, 1),
-        note: "2019Q4 = 100" }
+        note: "growth over the last 12 months" }
     ]);
     document.getElementById("stats").innerHTML = tiles.map(function (t) {
       return '<div class="stat"><div class="stat-label">' + t.label + '</div>' +
@@ -1866,10 +1899,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       ? newsAll.filter(function (r) { return r.period === q.period; }) : newsAll;
     var name = quarterOf(q.period);
     var running = / \(running\)$/.test(newsQuarterLabel(q));
-    // The quarter named in the heading, so it can never be read as the
-    // running quarter when it is the one just ended.
-    document.getElementById("news-title").textContent = "What moved the " + name + " nowcast" +
-      (newsView === "history" && newsHistoryUpdates().length ? ", week by week" : " this week");
+    // The heading stays "News"; the quarter is named in the summary below.
     document.getElementById("news-view-group").hidden = !newsHistoryUpdates().length;
     document.getElementById("news-summary").textContent =
       "Nowcast of GDP growth over the whole of " + name + (running ? " (running; the weeks still to come are forecast)" : " (ended; GDP not yet published)") +
@@ -2330,6 +2360,11 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   var syncContribSlider = rangeSlider("contrib-range-slider", "contrib-range-seg", cstate,
     function () { return contribRows.length ? contribView() : []; }, function () { if (contribRows.length) renderContrib(); });
 
+  // Escape closes an open info box, as it would a tooltip.
+  document.addEventListener("keydown", function (e) {
+    var a = document.activeElement;
+    if (e.key === "Escape" && a && a.classList.contains("info-btn")) a.blur();
+  });
   segHandler("view-seg", function (btn) { state.view = btn.dataset.view; });
   segHandler("range-seg", applyRange(state), function () { render(); syncMainSlider(); });
   // A new measure is a new series of points: the slider's indices
