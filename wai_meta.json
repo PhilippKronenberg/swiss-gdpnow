@@ -1,16 +1,16 @@
 {
   "vintage_date": "2026-11-14",
-  "run_timestamp": "2026-11-15T02:38:56Z",
-  "last_obs_date": "2026-11-07",
+  "run_timestamp": "2026-11-16T19:29:20Z",
+  "last_obs_date": "2026-11-14",
   "first_obs_date": "1990-01-07",
-  "n_obs": 1769,
-  "latest_wai_qoq": 1.666,
-  "latest_wai_yoy": 3.4541,
-  "latest_index": 115.5504,
+  "n_obs": 1770,
+  "latest_wai_qoq": 0.7229,
+  "latest_wai_yoy": 3.3692,
+  "latest_index": 115.5205,
   "mfbdfm_version": "0.2.0.9000",
   "columns": ["date", "wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_yoy", "wai_index", "wai_qoq_q", "wai_yoy_q", "gdp_qoq", "gdp_yoy", "gdp_index"],
   "weeks_per_quarter": 12,
-  "weeks_observed": 5,
+  "weeks_observed": 6,
   "forecast_end": "2026-12-28",
   "forecast_columns": ["date", "wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_yoy", "wai_index", "wai_qoq_q", "wai_yoy_q"]
 }
