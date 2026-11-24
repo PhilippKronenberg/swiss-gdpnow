@@ -58,6 +58,7 @@
   --comp-mob:       #d98500;
   --comp-prices:    #b25f94;
   --comp-trade:     #58a9df;
+  --comp-pharma:    #9a5518;
   --comp-fin:       #00916c;
   --comp-cons:      #7d5ba6;
   --comp-lab:       #7f8a1e;
@@ -116,6 +117,7 @@
     --comp-mob:       #bd881c;
     --comp-prices:    #bd6c9c;
     --comp-trade:     #4a9ecf;
+    --comp-pharma:    #b86a2e;
     --comp-fin:       #148f69;
     --comp-cons:      #9078bd;
     --comp-lab:       #8f9b35;
@@ -172,6 +174,7 @@
   --comp-mob:       #bd881c;
   --comp-prices:    #bd6c9c;
   --comp-trade:     #4a9ecf;
+  --comp-pharma:    #b86a2e;
   --comp-fin:       #148f69;
   --comp-cons:      #9078bd;
   --comp-lab:       #8f9b35;
@@ -442,6 +445,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <p>Swiss GDPNow is a weekly estimate of Swiss GDP growth. Official GDP comes once a quarter, about two months after the quarter ends, and most business cycle indicators are monthly and measured on their own abstract scale. Swiss GDPNow combines 44 weekly, monthly and quarterly series in one Bayesian mixed-frequency dynamic factor model.</p>
   <p>What is new is that the index is tied to GDP itself. Its loading on GDP is fixed at one, so it reads directly as GDP growth in percent rather than as a generic activity index, and averaged over a quarter it reproduces published GDP. The model handles missing values and publication delays within the estimation. Stochastic volatility lets it follow sudden swings, such as the COVID-19 lockdown, instead of smoothing them away.</p>
   <p>This makes it a tool for following the economy as it happens: it shows the timing, depth and recovery of a shock within the quarter, which monthly and quarterly indicators cannot.</p>
+  <p>Chemicals and pharmaceuticals are handled separately. Their value added, about 7.5% of GDP, swings with the production and exports of a few large companies, which the other indicators do not reflect, and since 2022 these swings have been about half of the model's error. The model is therefore estimated on GDP without chemicals and pharmaceuticals, and their contribution is added back: as published by SECO for past quarters, and for quarters SECO has not yet published, estimated from pharmaceutical exports, with the months not yet released forecast by a time-series model. All figures show total GDP. Pharma appears as its own component in the contributions and in the news.</p>
 </section>
 
 <h2 class="panel-title">Forecast</h2>
@@ -561,6 +565,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-contrib">i</button>
       <div class="info-pop" role="tooltip" id="info-contrib">
         <p>Contributions to growth split the aggregate's growth rate into percentage point shares. Each bar shows how much a group of indicators pushed growth above or below the average growth path. The average plus the bars gives the weekly nowcast (solid line).</p>
+        <p><em>Chemicals and pharma</em> is not estimated by the model: it is SECO's published contribution for past quarters and, for quarters not yet published, a forecast from pharmaceutical exports. Within a quarter it is spread smoothly over the weeks.</p>
       </div>
     </div>
     <div class="range-row">
@@ -674,6 +679,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-news">i</button>
       <div class="info-pop" role="tooltip" id="info-news">
         <p>The news is the gap between a new release and what the model expected. The bars show how much each group's news moved the quarter's GDP nowcast, in points of annualised growth, and add up to the change since last week.</p>
+        <p><em>Chemicals and pharma</em> is the change in their estimated contribution: new export months, or SECO's figures replacing the estimate.</p>
         <p><em>Over the quarter</em> shows one bar per weekly update.</p>
       </div>
     </div>
@@ -713,6 +719,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-series">i</button>
       <div class="info-pop" role="tooltip" id="info-series">
         <p>The <em>loading</em> is how strongly a series moves with the index, with its 95% credible interval, scaled so that GDP is 1. GDP is not shown: its loading is fixed at 1.</p>
+        <p>The pharmaceutical exports row is not a factor loading. It shows how strongly the quarter's exports predict chemicals and pharma value added (standardised slope, 95% interval), and the share of its variation they explain.</p>
         <p><em>R²</em> is the share of a series' variation the index explains. A low value is normal for a noisy weekly series.</p>
       </div>
     </div>
@@ -795,6 +802,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     "Mobility":              { token: "--comp-mob",     label: "Mobility" },
     "Prices":                { token: "--comp-prices",  label: "Prices" },
     "International trade":   { token: "--comp-trade",   label: "International trade" },
+    "Pharma":                { token: "--comp-pharma",  label: "Chemicals and pharma" },
     "Financial markets":     { token: "--comp-fin",     label: "Financial markets" },
     "Consumption":           { token: "--comp-cons",    label: "Consumption" },
     "Labour market":         { token: "--comp-lab",     label: "Labour market" },
@@ -808,7 +816,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   // to stay apart for a colour-blind reader, checked with the palette validator.
   // Anything unlisted sorts to the end, alphabetically.
   var COMP_ORDER = ["trend", "GDP (target)", "Output and production", "Mobility", "Prices",
-                    "International trade", "Financial markets", "Consumption",
+                    "International trade", "Pharma", "Financial markets", "Consumption",
                     "Labour market", "Money and interest rates", "parameter_uncertainty"];
 
   var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true, fc: true };
