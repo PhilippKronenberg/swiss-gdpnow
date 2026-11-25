@@ -475,6 +475,14 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     </div>
   </div>
   <div class="ctl-group">
+    <span class="ctl-label" id="lbl-freq-seg">Frequency</span>
+    <div class="seg" role="group" aria-labelledby="lbl-freq-seg" id="freq-seg">
+      <button type="button" data-freq="w" aria-pressed="true">Weekly</button>
+      <button type="button" data-freq="m" aria-pressed="false">Monthly</button>
+      <button type="button" data-freq="q" aria-pressed="false">Quarterly</button>
+    </div>
+  </div>
+  <div class="ctl-group">
     <span class="ctl-label" id="lbl-range">Range</span>
     <div class="seg" role="group" aria-labelledby="lbl-range" id="range-seg">
       <button type="button" data-months="1" aria-pressed="false">1m</button>
@@ -497,6 +505,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-main">i</button>
     <div class="info-pop" role="tooltip" id="info-main">
       <p>The blue line is each week's growth rate. The green line averages it over each quarter, as GDP does, and matches published GDP.</p>
+      <p><em>Monthly</em> and <em>Quarterly</em> average the level index over each month or quarter and give the growth between those averages, at the same annualised rate: the way GDP growth is defined, so the quarterly values match the green line. The running month or quarter is drawn with the weeks observed so far, and dashed to its end with the forecast. The 95% band is shown for weekly data only: the uncertainty of an average cannot be read off the weekly bands.</p>
       <p>The filled diamond is the nowcast: the running quarter's growth over the weeks observed so far. The dashed line is the model's forecast to the end of the quarter, and the hollow diamond the whole quarter's growth.</p>
     </div>
   </div>
@@ -561,6 +570,14 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       </div>
     </div>
     <div class="ctl-group">
+      <span class="ctl-label" id="lbl-contrib-freq-seg">Frequency</span>
+      <div class="seg" role="group" aria-labelledby="lbl-contrib-freq-seg" id="contrib-freq-seg">
+        <button type="button" data-cfreq="w" aria-pressed="true">Weekly</button>
+        <button type="button" data-cfreq="m" aria-pressed="false">Monthly</button>
+        <button type="button" data-cfreq="q" aria-pressed="false">Quarterly</button>
+      </div>
+    </div>
+    <div class="ctl-group">
       <span class="ctl-label" id="lbl-crange">Range</span>
       <div class="seg" role="group" aria-labelledby="lbl-crange" id="contrib-range-seg">
         <button type="button" data-months="1" aria-pressed="false">1m</button>
@@ -579,6 +596,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-contrib">i</button>
       <div class="info-pop" role="tooltip" id="info-contrib">
         <p>Contributions to growth split the aggregate's growth rate into percentage point shares. Each bar shows how much a group of indicators pushed growth above or below the average growth path. The average plus the bars gives the weekly nowcast (solid line).</p>
+        <p><em>Monthly</em> and <em>Quarterly</em> show the average of the weeks in each month or quarter, so the bars still add up to the line.</p>
         <p><em>Chemicals and pharma</em> is not estimated by the model: it is SECO's published contribution for past quarters and, for quarters not yet published, a forecast from pharmaceutical exports. Within a quarter it follows monthly pharmaceutical exports: each month's change is spread evenly over its weeks.</p>
       </div>
     </div>
@@ -833,7 +851,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                     "International trade", "Pharma", "Financial markets", "Consumption",
                     "Labour market", "Money and interest rates", "parameter_uncertainty"];
 
-  var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true, fc: true };
+  var state = { view: "qoq", years: 5, since: null, band: true, gdp: true, waiq: true, fc: true, freq: "w" };
   var cstate = { years: 5, since: null, view: "qoq" };
   var rows = [], meta = null, chart = null;
   // wai_forecast.csv: the weeks past the data, as the model forecasts them, to the
@@ -988,10 +1006,10 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     }
   };
 
-  function buildDatasets(view, data) {
+  function buildDatasets(view, data, agg) {
     var v = VIEWS[view], sets = [];
     var wai = css("--series-wai"), band = css("--series-wai-band"), gdpC = css("--series-gdp");
-    var hasBand = state.band && v.lo && v.hi;
+    var hasBand = state.band && v.lo && v.hi && !agg;
 
     if (hasBand) {
       sets.push({ label: "lo", data: data.map(function (r) { return { x: r.t, y: r[v.lo] }; }),
@@ -1007,8 +1025,8 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     // The forecast: the same line, dashed, from the latest week on, so it joins
     // the observed line rather than leaving a gap. Its band is drawn the same way
     // as the observed one and widens with the horizon.
-    if (forecastShown(data)) {
-      var fdata = [data[data.length - 1]].concat(fcRows);
+    if (agg ? agg.fcShown : forecastShown(data)) {
+      var fdata = [data[data.length - 1]].concat(agg ? agg.fc : fcRows);
       if (hasBand) {
         sets.push({ label: "lo", data: fdata.map(function (r) { return { x: r.t, y: r[v.lo] }; }),
                     borderWidth: 0, pointRadius: 0, fill: false, order: 4 });
@@ -1057,7 +1075,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                   pointRadius: 8, pointHoverRadius: 10, pointBorderWidth: 2, order: -1 });
     });
     // The forecast's quarters: the same diamond, hollow, at each quarter's end.
-    if (forecastShown(data)) {
+    if (agg ? agg.fcShown : forecastShown(data)) {
       forecastPoints(v).forEach(function (p) {
         sets.push({ label: forecastLabel(p),
                     data: [{ x: p.t, y: p.value }],
@@ -1190,12 +1208,13 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   }
 
   function render() {
-    var data = visibleRows(), v = VIEWS[state.view];
+    var data = visibleRows(), v = VIEWS[state.view], agg = null;
+    if (state.freq && state.freq !== "w") { agg = aggMain(data); data = agg.obs; }
     if (chart) { chart.destroy(); chart = null; }
 
     chart = new Chart(document.getElementById("chart"), {
       type: "line",
-      data: { datasets: buildDatasets(state.view, data) },
+      data: { datasets: buildDatasets(state.view, data, agg) },
       plugins: [crosshair],
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -1211,7 +1230,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                min: data.length ? data[0].t - 3.5 * 864e5 : undefined,
                // The forecast ends on a hollow diamond, which needs room to be
                // drawn whole and hovered on a narrow screen.
-               max: data.length ? (forecastShown(data) ? fcRows[fcRows.length - 1].t + 21 * 864e5
+               max: data.length ? ((agg ? agg.fcShown : forecastShown(data)) ? (agg ? agg.fc[agg.fc.length - 1].t : fcRows[fcRows.length - 1].t) + 21 * 864e5
                                                        : data[data.length - 1].t + 3.5 * 864e5) : undefined,
                grid: { display: false },
                border: { color: css("--border") },
@@ -1522,7 +1541,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   }
 
   function renderContrib() {
-    var data = sliceRange(contribView(), cstate), comps = contribComponents();
+    var data = aggContrib(sliceRange(contribView(), cstate)), comps = contribComponents();
     var labels = data.map(function (r) { return r.date; });
     if (contribChart) { contribChart.destroy(); contribChart = null; }
 
@@ -2136,6 +2155,74 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       });
   }
 
+  // --- frequency: weekly, monthly or quarterly ---------------------------------
+  // Periods are "2026-11" (month) or "2026Q4" (quarter), read off an ISO date.
+  function periodOf(date, f) {
+    var m = Number(date.slice(5, 7));
+    return f === "m" ? date.slice(0, 7) : date.slice(0, 4) + "Q" + (Math.floor((m - 1) / 3) + 1);
+  }
+  function groupBy(arr, f) {
+    var out = [], cur = null;
+    arr.forEach(function (r) {
+      var k = periodOf(r.date, f);
+      if (!cur || cur.key !== k) { cur = { key: k, rows: [] }; out.push(cur); }
+      cur.rows.push(r);
+    });
+    return out;
+  }
+  // A range that starts inside a period would average only its last weeks: leave that period out.
+  function fullFirst(g) { if (g.length > 1 && g[0].rows.length < g[1].rows.length) g.shift(); return g; }
+  // The main chart's rows by month or quarter: the level averaged over the period, and
+  // growth between period averages at the views' own rates (as GDP growth is defined);
+  // the quarterly values and GDP are carried over from the period's weeks.
+  function aggLevels(arr, f) {
+    var per = f === "m" ? 12 : 4, g = groupBy(arr, f);
+    var lv = g.map(function (p) { return p.rows.reduce(function (s, r) { return s + r.wai_index; }, 0) / p.rows.length; });
+    return g.map(function (p, i) {
+      var last = p.rows[p.rows.length - 1], r = {};
+      Object.keys(last).forEach(function (k) {
+        r[k] = last[k];
+        if (/_q$|_q_notann$/.test(k) || /^gdp_/.test(k)) {
+          r[k] = null;
+          p.rows.forEach(function (w) { if (w[k] !== null && w[k] !== undefined && !isNaN(w[k])) r[k] = w[k]; });
+        }
+      });
+      var g1 = i > 0 ? lv[i] / lv[i - 1] : null, gy = i >= per ? lv[i] / lv[i - per] : null;
+      r.wai_index = lv[i];
+      r.wai_qoq = g1 === null ? null : (Math.pow(g1, per) - 1) * 100;
+      r.wai_qoq_notann = g1 === null ? null : (Math.pow(g1, per / 4) - 1) * 100;
+      r.wai_yoy = gy === null ? null : (gy - 1) * 100;
+      r.wai_qoq_lo = r.wai_qoq_hi = r.wai_qoq_lo_notann = r.wai_qoq_hi_notann = null;
+      r.key = p.key; r.weeks = p.rows.length;
+      return r;
+    });
+  }
+  // The observed periods in the range shown, and the forecast's: the running period
+  // completed with the forecast weeks, and any period after it.
+  function aggMain(vis) {
+    var f = state.freq, obs = aggLevels(rows, f), lastKey = obs[obs.length - 1].key, fc = [];
+    if (state.fc && fcRows.length) fc = aggLevels(rows.concat(fcRows), f).filter(function (r) { return r.key >= lastKey; });
+    var k0 = vis.length ? periodOf(vis[0].date, f) : "", k1 = vis.length ? periodOf(vis[vis.length - 1].date, f) : "~";
+    obs = obs.filter(function (r) { return r.key >= k0 && r.key <= k1; });
+    var shown = fc.length > 0 && vis.length > 0 && vis[vis.length - 1].t === rows[rows.length - 1].t;
+    return { obs: obs, fc: fc, fcShown: shown };
+  }
+  // Contributions by month or quarter: the average of the weeks, so they still add up.
+  var cfreq = "w";
+  function aggContrib(arr) {
+    if (cfreq === "w") return arr;
+    return fullFirst(groupBy(arr, cfreq)).map(function (p) {
+      var n = p.rows.length, last = p.rows[n - 1];
+      var r = { date: last.date, t: last.t, values: {}, total: 0, trend: 0, wai: 0, dev: 0 };
+      p.rows.forEach(function (w) {
+        Object.keys(w.values).forEach(function (k) { var v = w.values[k]; if (v !== null && v !== undefined && !isNaN(v)) r.values[k] = (r.values[k] || 0) + v / n; });
+        r.total += w.total / n; r.trend += w.trend / n;
+        r.wai += (w.wai === null ? 0 : w.wai) / n; r.dev += (w.dev === null ? 0 : w.dev) / n;
+      });
+      return r;
+    });
+  }
+
   // --- single indicators -------------------------------------------------
   //
   // wai_contributions_series.csv is long like wai_contributions.csv, and starts
@@ -2167,6 +2254,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   function indPeriodWeeks() {
     var v = document.getElementById("ind-period").value;
     if (v === "1" || v === "4" || v === "12") return indWeeks.slice(-Number(v));
+    if (/^[mq][01]$/.test(v)) { var g = groupBy(indWeeks, v[0]); var p = g[g.length - 1 - Number(v[1])]; return p ? p.rows : []; }
     return indWeeks.filter(function (w) { return w.date === v; });
   }
   function meanOver(weeks, read) {
@@ -2270,7 +2358,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       .then(function (text) {
         indWeeks = parseIndicators(text);
         if (!indWeeks.length) throw new Error("wai_contributions_series.csv contains no rows");
-        var fixed = [["1", "Latest week"], ["4", "Last 4 weeks, average"], ["12", "Last 12 weeks, average"]];
+        var fixed = [["1", "Latest week"], ["4", "Last 4 weeks, average"], ["12", "Last 12 weeks, average"],
+                     ["m0", "This month so far, average"], ["m1", "Last full month, average"],
+                     ["q0", "This quarter so far, average"], ["q1", "Last full quarter, average"]];
         document.getElementById("ind-period").innerHTML =
           fixed.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("") +
           indWeeks.slice().reverse().map(function (w) {
@@ -2398,6 +2488,8 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     if (contribRows.length) { renderContrib(); syncContribSlider(); }
   }
   segHandler("contrib-view-seg", function (btn) { cstate.view = btn.dataset.cview; }, contribRedraw);
+  segHandler("freq-seg", function (btn) { state.freq = btn.dataset.freq; });
+  segHandler("contrib-freq-seg", function (btn) { cfreq = btn.dataset.cfreq; }, renderContrib);
   segHandler("contrib-range-seg", applyRange(cstate), function () {
     if (contribRows.length) { renderContrib(); syncContribSlider(); }
   });
