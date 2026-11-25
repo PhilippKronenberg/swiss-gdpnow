@@ -60,6 +60,12 @@ jobs:
       - name: Validate data and internal references
         run: node tools/validate-data.mjs
 
+      # The same checks on the series for GDP without chemicals and pharma, behind
+      # the page's GDP switch, when the folder is there.
+      - name: Validate the GDP-without-pharma data
+        run: |
+          if [ -d ex_pharma ]; then node tools/validate-data.mjs --dir=ex_pharma; fi
+
       # Chart.js is vendored rather than CDN-loaded as a deliberate
       # supply-chain choice. An unreviewed change to a vendored file is exactly
       # the risk that choice was meant to remove, so pin the bytes.
