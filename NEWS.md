@@ -19,6 +19,19 @@ they can be found quickly:
 Anything unmarked is repository infrastructure and does not affect what is
 published.
 
+## 2026-11-25
+
+- **Presentation** — A **Frequency** switch (Weekly / Monthly / Quarterly) on the
+  main chart and the contributions chart. On the main chart, Monthly and
+  Quarterly average the level index over each month or quarter and show the
+  growth between those averages, at the view's own rate: the way GDP growth is
+  defined, so the quarterly values match the quarterly line. The running month
+  or quarter is drawn over the weeks observed so far and dashed to its end with
+  the forecast; the 95% band is shown for weekly data only. The contributions
+  are averaged over the weeks of each period, so they still add up. The
+  indicator panel's period menu gains this month and quarter so far and the
+  last full month and quarter. No published number changes.
+
 ## 2026-11-10
 
 - **Presentation** — The news panel shows every quarter whose GDP SECO has not
