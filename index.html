@@ -278,6 +278,7 @@ header .icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--on-
 .seg button[aria-pressed="true"] { background: var(--brand); color: var(--on-accent); font-weight: 600; }
 .seg button:focus-visible { outline: 2px solid var(--series-wai); outline-offset: -2px; }
 .scope { margin-bottom: 12px; }
+.scope[hidden] { display: none; }
 .scope-note { flex-basis: 100%; margin: 4px 0 0; color: var(--text-muted, inherit); font-size: 0.9em; }
 label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; color: var(--text-secondary); cursor: pointer; }
 label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
@@ -440,15 +441,15 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 <div class="banner banner-warn" id="sample-banner" hidden></div>
 <div class="banner banner-err" id="error-banner" hidden></div>
 
-<section class="controls scope" aria-label="Which GDP">
+<section class="controls scope" aria-label="Which GDP" id="scope" hidden>
   <div class="ctl-group">
     <span class="ctl-label" id="lbl-scope">GDP</span>
     <div class="seg" role="group" aria-labelledby="lbl-scope" id="scope-seg">
       <button type="button" data-scope="total" aria-pressed="true">Total GDP</button>
-      <button type="button" data-scope="ex-pharma" aria-pressed="false">Without chemicals and pharma</button>
+      <button type="button" data-scope="pharma-adjusted" aria-pressed="false">Pharma adjusted GDP</button>
     </div>
   </div>
-  <p class="scope-note" id="scope-note" hidden>Showing GDP without chemicals and pharmaceuticals (NOGA 19-21), the series the model is estimated on. Published GDP here is SECO's GDP with SECO's contribution of chemicals and pharmaceuticals taken out.</p>
+  <p class="scope-note" id="scope-note" hidden>Showing pharma adjusted GDP: GDP without chemicals and pharmaceuticals (NOGA 19-21), the series the model is estimated on. Published GDP here is SECO's GDP with SECO's contribution of chemicals and pharmaceuticals taken out.</p>
 </section>
 
 <section class="stats" id="stats" aria-label="Latest readings"></section>
@@ -458,7 +459,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <p>Swiss GDPNow is a weekly estimate of Swiss GDP growth. Official GDP comes once a quarter, about two months after the quarter ends, and most business cycle indicators are monthly and measured on their own abstract scale. Swiss GDPNow combines 44 weekly, monthly and quarterly series in one Bayesian mixed-frequency dynamic factor model.</p>
   <p>What is new is that the index is tied to GDP itself. Its loading on GDP is fixed at one, so it reads directly as GDP growth in percent rather than as a generic activity index, and averaged over a quarter it reproduces published GDP. The model handles missing values and publication delays within the estimation. Stochastic volatility lets it follow sudden swings, such as the COVID-19 lockdown, instead of smoothing them away.</p>
   <p>This makes it a tool for following the economy as it happens: it shows the timing, depth and recovery of a shock within the quarter, which monthly and quarterly indicators cannot.</p>
-  <p>Chemicals and pharmaceuticals are handled separately. Their value added, about 7.5% of GDP, swings with the production and exports of a few large companies, which is highly idiosyncratic to the rest of the economy. The model is therefore estimated on GDP without chemicals and pharmaceuticals, and their contribution is added back. All figures show total GDP; the switch at the top shows them for GDP without chemicals and pharmaceuticals instead.</p>
+  <p>Chemicals and pharmaceuticals are handled separately. Their value added, about 7.5% of GDP, swings with the production and exports of a few large companies, which is highly idiosyncratic to the rest of the economy. The model is therefore estimated on GDP without chemicals and pharmaceuticals, and their contribution is added back. All figures show total GDP; the switch at the top shows them for pharma adjusted GDP, without chemicals and pharmaceuticals, instead.</p>
 </section>
 
 <h2 class="panel-title">Forecast</h2>
@@ -2464,12 +2465,14 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   // --- load --------------------------------------------------------------
   var bust = new Date().toISOString().slice(0, 10);
 
-  // Which GDP: total (the root files) or without chemicals and pharma (the same
-  // files in ex_pharma/). Chosen by ?gdp=ex-pharma, so a view can be linked; the
-  // switch reloads the page with the other choice.
+  // Which GDP: total (the root files) or pharma adjusted, without chemicals and
+  // pharma (the same files in ex_pharma/). Chosen by ?gdp=pharma-adjusted, so a view
+  // can be linked; the switch reloads the page with the other choice. The switch is
+  // shown only once ex_pharma/ is published; a link to it before then falls back to
+  // total GDP.
   var SCOPE = "total";
-  try { if (new URLSearchParams(location.search).get("gdp") === "ex-pharma") SCOPE = "ex-pharma"; } catch (e) { /* old browser */ }
-  var DATA = SCOPE === "ex-pharma" ? "ex_pharma/" : "";
+  try { if (new URLSearchParams(location.search).get("gdp") === "pharma-adjusted") SCOPE = "pharma-adjusted"; } catch (e) { /* old browser */ }
+  var DATA = SCOPE === "pharma-adjusted" ? "ex_pharma/" : "";
   Array.prototype.forEach.call(document.querySelectorAll("#scope-seg button"), function (b) {
     b.setAttribute("aria-pressed", String(b.getAttribute("data-scope") === SCOPE));
     b.addEventListener("click", function () {
@@ -2480,7 +2483,11 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       location.href = u.toString();
     });
   });
-  document.getElementById("scope-note").hidden = SCOPE !== "ex-pharma";
+  document.getElementById("scope-note").hidden = SCOPE !== "pharma-adjusted";
+  fetch("ex_pharma/wai_meta.json?v=" + bust, { method: "HEAD" }).then(function (r) {
+    if (r.ok) { document.getElementById("scope").hidden = false; return; }
+    if (DATA) { var u = new URL(location.href); u.searchParams.delete("gdp"); location.replace(u.toString()); }
+  }).catch(function () { /* offline: leave the switch hidden */ });
   if (DATA) {
     Array.prototype.forEach.call(document.querySelectorAll('a[href^="wai_"]'), function (a) {
       a.setAttribute("href", DATA + a.getAttribute("href"));
