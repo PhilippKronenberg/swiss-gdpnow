@@ -1,0 +1,16 @@
+{
+  "vintage_date": "2026-11-21",
+  "run_timestamp": "2026-11-25T14:14:51Z",
+  "last_obs_date": "2026-11-21",
+  "first_obs_date": "1990-01-07",
+  "n_obs": 1771,
+  "latest_wai_qoq": -1.9146,
+  "latest_wai_yoy": 2.3815,
+  "latest_index": 110.3795,
+  "mfbdfm_version": "0.2.0.9000",
+  "columns": ["date", "wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_yoy", "wai_index", "wai_qoq_q", "wai_yoy_q", "gdp_qoq", "gdp_yoy", "gdp_index"],
+  "weeks_per_quarter": 12,
+  "weeks_observed": 7,
+  "forecast_end": "2026-12-28",
+  "forecast_columns": ["date", "wai_qoq", "wai_qoq_lo", "wai_qoq_hi", "wai_yoy", "wai_index", "wai_qoq_q", "wai_yoy_q"]
+}

@@ -1,0 +1,10 @@
+{
+  "vintage_date": "2026-11-21",
+  "run_timestamp": "2026-11-25T14:14:49Z",
+  "mfbdfm_version": "0.2.0.9000",
+  "contributions_unit": "percentage points of wai_qoq (annualised quarter-on-quarter growth, %)",
+  "news_unit": "percentage points of the annualised quarterly GDP nowcast",
+  "loading_scale": "standardised series",
+  "components": ["Consumption", "Financial markets", "GDP (target)", "International trade", "Labour market", "Mobility", "Money and interest rates", "Output and production", "parameter_uncertainty", "Prices", "trend"],
+  "news_available": false
+}

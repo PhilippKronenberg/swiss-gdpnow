@@ -1,18 +1,86 @@
 {
   "vintage_date": "2026-11-21",
-  "run_timestamp": "2026-11-24T07:43:50Z",
+  "run_timestamp": "2026-11-25T14:14:49Z",
   "mfbdfm_version": "0.2.0.9000",
   "contributions_unit": "percentage points of wai_qoq (annualised quarter-on-quarter growth, %)",
   "news_unit": "percentage points of the annualised quarterly GDP nowcast",
   "loading_scale": "standardised series",
-  "components": ["Consumption", "Financial markets", "GDP (target)", "International trade", "Labour market", "Mobility", "Money and interest rates", "Output and production", "parameter_uncertainty", "Prices", "trend"],
-  "news_available": true,
-  "news_period": "2026-07-07",
-  "news_nowcast_old": 3.0236,
-  "news_nowcast_new": 3.0104,
-  "news_old_vintage": "2026-11-14",
-  "news_new_obs": 22,
-  "news_periods": ["2026-07-07", "2026-10-07"],
-  "news_nowcasts_old": [3.0236, 2.0967],
-  "news_nowcasts_new": [3.0104, 1.6793]
+  "components": ["Consumption", "Financial markets", "GDP (target)", "International trade", "Labour market", "Mobility", "Money and interest rates", "Output and production", "parameter_uncertainty", "Pharma", "Prices", "trend"],
+  "news_available": false,
+  "pharma": {
+    "method": "Fitted on pharma adjusted GDP, without chemicals and pharma (NOGA 19-21); pharma added back: g = (1 - w) g_ex + c, w = previous year's nominal share of NOGA 19-21, c = pharma's contribution to GDP growth (SECO's where published, otherwise the chain-linking weight times the bridge's growth).",
+    "component": "Pharma",
+    "last_seco_quarter": "2026q2",
+    "bridge": {
+      "slope": 0.267000107378775,
+      "slope_se": 0.0445022198523544,
+      "intercept": 0.017224476403306,
+      "r2": 0.274789438733923,
+      "n_quarters": 97,
+      "from": 2002.25,
+      "to": 2026.25,
+      "sigma": 0.0275501718166658,
+      "loading": 0.524203623350625,
+      "loading_lo": 0.352955299742702,
+      "loading_hi": 0.695451946958547,
+      "arima": "ARIMA(0,0,3)",
+      "last_export_month": "2026-10-01"
+    },
+    "quarters": [
+      {
+        "quarter": "2025q3",
+        "source": "SECO",
+        "growth_annualised": -26.3276,
+        "sd_annualised": 0,
+        "weight": 0.0731,
+        "contribution_annualised": -2.2948,
+        "months_known": null
+      },
+      {
+        "quarter": "2025q4",
+        "source": "SECO",
+        "growth_annualised": 15.2851,
+        "sd_annualised": 0,
+        "weight": 0.0731,
+        "contribution_annualised": 1.0276,
+        "months_known": null
+      },
+      {
+        "quarter": "2026q1",
+        "source": "SECO",
+        "growth_annualised": -6.8687,
+        "sd_annualised": 0,
+        "weight": 0.0759,
+        "contribution_annualised": -0.5073,
+        "months_known": null
+      },
+      {
+        "quarter": "2026q2",
+        "source": "SECO",
+        "growth_annualised": 49.104,
+        "sd_annualised": 0,
+        "weight": 0.0759,
+        "contribution_annualised": 2.8949,
+        "months_known": null
+      },
+      {
+        "quarter": "2026q3",
+        "source": "bridge",
+        "growth_annualised": -8.54,
+        "sd_annualised": 11.4488,
+        "weight": 0.0759,
+        "contribution_annualised": -0.6989,
+        "months_known": 3
+      },
+      {
+        "quarter": "2026q4",
+        "source": "bridge",
+        "growth_annualised": 17.1048,
+        "sd_annualised": 12.0715,
+        "weight": 0.0759,
+        "contribution_annualised": 1.2469,
+        "months_known": 1
+      }
+    ]
+  }
 }
