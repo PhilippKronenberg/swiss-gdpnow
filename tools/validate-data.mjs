@@ -15,10 +15,17 @@
 // With --check-staleness it additionally asserts that the published vintage is
 // not too old. That check is opt-in because it depends on today's date rather
 // than on the contents of the repository; see the staleness section below.
+//
+// With --dir=<folder> it validates the data files in that folder instead, e.g.
+// --dir=ex_pharma for the series on GDP without chemicals and pharma, which the
+// page shows behind its GDP switch. index.html lives in the root, so its
+// reference check is skipped there.
 
 import { readFileSync, existsSync } from "node:fs";
 
 const checkStaleness = process.argv.includes("--check-staleness");
+const dirArg = process.argv.find((a) => a.startsWith("--dir="));
+if (dirArg) process.chdir(dirArg.slice("--dir=".length));
 
 const failures = [];
 const notes = [];

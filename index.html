@@ -277,6 +277,8 @@ header .icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: var(--on-
    light, near-black in dark, where --brand is a pale teal. */
 .seg button[aria-pressed="true"] { background: var(--brand); color: var(--on-accent); font-weight: 600; }
 .seg button:focus-visible { outline: 2px solid var(--series-wai); outline-offset: -2px; }
+.scope { margin-bottom: 12px; }
+.scope-note { flex-basis: 100%; margin: 4px 0 0; color: var(--text-muted, inherit); font-size: 0.9em; }
 label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; color: var(--text-secondary); cursor: pointer; }
 label.check input { accent-color: var(--brand); width: 16px; height: 16px; }
 
@@ -438,6 +440,17 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
 <div class="banner banner-warn" id="sample-banner" hidden></div>
 <div class="banner banner-err" id="error-banner" hidden></div>
 
+<section class="controls scope" aria-label="Which GDP">
+  <div class="ctl-group">
+    <span class="ctl-label" id="lbl-scope">GDP</span>
+    <div class="seg" role="group" aria-labelledby="lbl-scope" id="scope-seg">
+      <button type="button" data-scope="total" aria-pressed="true">Total GDP</button>
+      <button type="button" data-scope="ex-pharma" aria-pressed="false">Without chemicals and pharma</button>
+    </div>
+  </div>
+  <p class="scope-note" id="scope-note" hidden>Showing GDP without chemicals and pharmaceuticals (NOGA 19-21), the series the model is estimated on. Published GDP here is SECO's GDP with SECO's contribution of chemicals and pharmaceuticals taken out.</p>
+</section>
+
 <section class="stats" id="stats" aria-label="Latest readings"></section>
 
 <section class="notes about" aria-labelledby="about-title">
@@ -445,7 +458,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   <p>Swiss GDPNow is a weekly estimate of Swiss GDP growth. Official GDP comes once a quarter, about two months after the quarter ends, and most business cycle indicators are monthly and measured on their own abstract scale. Swiss GDPNow combines 44 weekly, monthly and quarterly series in one Bayesian mixed-frequency dynamic factor model.</p>
   <p>What is new is that the index is tied to GDP itself. Its loading on GDP is fixed at one, so it reads directly as GDP growth in percent rather than as a generic activity index, and averaged over a quarter it reproduces published GDP. The model handles missing values and publication delays within the estimation. Stochastic volatility lets it follow sudden swings, such as the COVID-19 lockdown, instead of smoothing them away.</p>
   <p>This makes it a tool for following the economy as it happens: it shows the timing, depth and recovery of a shock within the quarter, which monthly and quarterly indicators cannot.</p>
-  <p>Chemicals and pharmaceuticals are handled separately. Their value added, about 7.5% of GDP, swings with the production and exports of a few large companies, which the other indicators do not reflect, and since 2022 these swings have been about half of the model's error. The model is therefore estimated on GDP without chemicals and pharmaceuticals, and their contribution is added back: as published by SECO for past quarters, and for quarters SECO has not yet published, estimated from pharmaceutical exports, with the months not yet released forecast by a time-series model. All figures show total GDP. Pharma appears as its own component in the contributions and in the news.</p>
+  <p>Chemicals and pharmaceuticals are handled separately. Their value added, about 7.5% of GDP, swings with the production and exports of a few large companies, which is highly idiosyncratic to the rest of the economy. The model is therefore estimated on GDP without chemicals and pharmaceuticals, and their contribution is added back. All figures show total GDP; the switch at the top shows them for GDP without chemicals and pharmaceuticals instead.</p>
 </section>
 
 <h2 class="panel-title">Forecast</h2>
@@ -565,7 +578,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       <button type="button" class="info-btn" aria-label="About this chart" aria-describedby="info-contrib">i</button>
       <div class="info-pop" role="tooltip" id="info-contrib">
         <p>Contributions to growth split the aggregate's growth rate into percentage point shares. Each bar shows how much a group of indicators pushed growth above or below the average growth path. The average plus the bars gives the weekly nowcast (solid line).</p>
-        <p><em>Chemicals and pharma</em> is not estimated by the model: it is SECO's published contribution for past quarters and, for quarters not yet published, a forecast from pharmaceutical exports. Within a quarter it is spread smoothly over the weeks.</p>
+        <p><em>Chemicals and pharma</em> is not estimated by the model: it is SECO's published contribution for past quarters and, for quarters not yet published, a forecast from pharmaceutical exports. Within a quarter it follows monthly pharmaceutical exports: each month's change is spread evenly over its weeks.</p>
       </div>
     </div>
     <div class="range-row">
@@ -1635,11 +1648,11 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     var panel = document.getElementById("drivers");
     // Returned so the news and series panels can start once measMeta is set;
     // the chain ends in a catch, so it always resolves.
-    return fetch("wai_measures_meta.json?v=" + bust, { cache: "no-cache" })
+    return fetch(DATA + "wai_measures_meta.json?v=" + bust, { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (m) { measMeta = m; })
       .catch(function () { measMeta = null; })
-      .then(function () { return fetch("wai_contributions.csv?v=" + bust, { cache: "no-cache" }); })
+      .then(function () { return fetch(DATA + "wai_contributions.csv?v=" + bust, { cache: "no-cache" }); })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_contributions.csv");
         return r.text();
@@ -1929,7 +1942,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       panel.hidden = false;
       return;
     }
-    fetch("wai_news.csv?v=" + bust, { cache: "no-cache" })
+    fetch(DATA + "wai_news.csv?v=" + bust, { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_news.csv");
         return r.text();
@@ -1953,7 +1966,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
         buildNewsButtons();
         showNewsQuarter();
         panel.hidden = false;
-        return fetch("wai_news_history.csv?v=" + bust, { cache: "no-cache" })
+        return fetch(DATA + "wai_news_history.csv?v=" + bust, { cache: "no-cache" })
           .then(function (r) {
             if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_news_history.csv");
             return r.text();
@@ -2099,7 +2112,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   function loadSeries() {
     var panel = document.getElementById("series");
     // Returned so the indicator panel can start once the names are in.
-    return fetch("wai_series.csv?v=" + bust, { cache: "no-cache" })
+    return fetch(DATA + "wai_series.csv?v=" + bust, { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_series.csv");
         return r.text();
@@ -2248,7 +2261,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   function loadIndicators() {
     var panel = document.getElementById("indicators");
     if (!seriesRows.length || !contribRows.length) return;
-    fetch("wai_contributions_series.csv?v=" + bust, { cache: "no-cache" })
+    fetch(DATA + "wai_contributions_series.csv?v=" + bust, { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_contributions_series.csv");
         return r.text();
@@ -2451,10 +2464,33 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   // --- load --------------------------------------------------------------
   var bust = new Date().toISOString().slice(0, 10);
 
+  // Which GDP: total (the root files) or without chemicals and pharma (the same
+  // files in ex_pharma/). Chosen by ?gdp=ex-pharma, so a view can be linked; the
+  // switch reloads the page with the other choice.
+  var SCOPE = "total";
+  try { if (new URLSearchParams(location.search).get("gdp") === "ex-pharma") SCOPE = "ex-pharma"; } catch (e) { /* old browser */ }
+  var DATA = SCOPE === "ex-pharma" ? "ex_pharma/" : "";
+  Array.prototype.forEach.call(document.querySelectorAll("#scope-seg button"), function (b) {
+    b.setAttribute("aria-pressed", String(b.getAttribute("data-scope") === SCOPE));
+    b.addEventListener("click", function () {
+      var s = b.getAttribute("data-scope");
+      if (s === SCOPE) return;
+      var u = new URL(location.href);
+      if (s === "total") u.searchParams.delete("gdp"); else u.searchParams.set("gdp", s);
+      location.href = u.toString();
+    });
+  });
+  document.getElementById("scope-note").hidden = SCOPE !== "ex-pharma";
+  if (DATA) {
+    Array.prototype.forEach.call(document.querySelectorAll('a[href^="wai_"]'), function (a) {
+      a.setAttribute("href", DATA + a.getAttribute("href"));
+    });
+  }
+
   // Never rejects: the forecast is additive, so a 404 or a malformed file leaves
   // the page as it is without one and must not raise #error-banner.
   function loadForecast() {
-    return fetch("wai_forecast.csv?v=" + bust, { cache: "no-cache" })
+    return fetch(DATA + "wai_forecast.csv?v=" + bust, { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_forecast.csv");
         return r.text();
@@ -2474,11 +2510,11 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
       });
   }
 
-  fetch("wai_meta.json?v=" + bust, { cache: "no-cache" })
+  fetch(DATA + "wai_meta.json?v=" + bust, { cache: "no-cache" })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (m) { meta = m; })
     .catch(function () { meta = null; })
-    .then(function () { return fetch("wai_data.csv?v=" + bust, { cache: "no-cache" }); })
+    .then(function () { return fetch(DATA + "wai_data.csv?v=" + bust, { cache: "no-cache" }); })
     .then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status + " fetching wai_data.csv");
       return r.text();
