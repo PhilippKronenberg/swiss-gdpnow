@@ -944,20 +944,11 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     } else {
       return arr;
     }
+    // Every figure starts at the same week for the same preset. The quarterly
+    // line then begins at the first quarter's end inside the range.
     var i0 = 0;
     while (i0 < arr.length && arr[i0].t < start) i0++;
-    return arr.slice(widenToQuarter(arr, i0));
-  }
-  // A preset range starts mid-quarter, so the quarterly WAI and GDP of the quarter
-  // before it would sit just outside, and the quarterly line would begin in the
-  // middle of the chart. Reach back to that quarter's last week (at most 13 weeks)
-  // so its point is shown. Rows without quarterly columns are left as cut.
-  function widenToQuarter(arr, i0) {
-    var q = function (r) {
-      return [r.wai_qoq_q, r.wai_yoy_q, r.gdp_qoq, r.gdp_yoy].some(function (x) { return x !== null && x !== undefined; });
-    };
-    for (var j = i0 - 1; j >= 0 && j >= i0 - 13; j--) if (q(arr[j])) return j;
-    return i0;
+    return arr.slice(i0);
   }
   function visibleRows() { return sliceRange(rows, state); }
 
@@ -1226,7 +1217,14 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
         animation: false,
         scales: {
           // Half a week of margin, so the first and last markers are not cut by the edge.
-          x: { type: "time", time: { tooltipFormat: "d MMM yyyy" },
+          // Day before month, as on the contribution chart's axis.
+          x: { type: "time", time: { tooltipFormat: "d MMM yyyy",
+                                     // monthly and quarterly points get month labels, not
+                                     // days; over longer spans the axis picks years itself
+                                     unit: (state.freq === "m" || state.freq === "q") && data.length &&
+                                           data[data.length - 1].t - data[0].t <= 730 * 864e5 ? "month" : undefined,
+                                     displayFormats: { day: "d MMM", week: "d MMM",
+                                                       month: "MMM yyyy", quarter: "MMM yyyy" } },
                min: data.length ? data[0].t - 3.5 * 864e5 : undefined,
                // The forecast ends on a hollow diamond, which needs room to be
                // drawn whole and hovered on a narrow screen.
@@ -1474,6 +1472,32 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     var m = /^(\d{4})-(\d{2})-\d{2}$/.exec(String(iso));
     return m ? MONTHS[Number(m[2]) - 1] + " " + m[1] : String(iso);
   }
+  // "8 Sep" for a week.
+  function dayLabel(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+    return m ? Number(m[3]) + " " + MONTHS[Number(m[2]) - 1] : String(iso);
+  }
+  // The contribution chart's x axis is one category per bar, so its labels are
+  // chosen here for the span shown, as a time axis would: weeks over a few
+  // months, months over a few years, years beyond. Labels that would repeat are
+  // left blank. `skip` says whether Chart.js may thin them further.
+  function contribTicks(data) {
+    var dates = data.map(function (r) { return r.date; });
+    var span = data.length ? (data[data.length - 1].t - data[0].t) / 864e5 : 0;
+    if (cfreq === "q" && span <= 6 * 365) return { labels: dates.map(quarterOf), skip: true };
+    if (cfreq === "m" && span <= 3 * 365) return { labels: dates.map(monthLabel), skip: true };
+    if (cfreq === "w" && span <= 270) return { labels: dates.map(dayLabel), skip: true };
+    var every = span <= 400 ? 1 : span <= 730 ? 2 : 3, yearly = span > 3 * 365, k = 0;
+    var ystep = span > 15 * 365 ? 5 : span > 8 * 365 ? 2 : 1;
+    var labels = dates.map(function (d, i) {
+      var prev = i ? dates[i - 1] : null;
+      if (yearly) return (!prev || d.slice(0, 4) !== prev.slice(0, 4)) && Number(d.slice(0, 4)) % ystep === 0
+        ? d.slice(0, 4) : "";
+      if (prev && d.slice(0, 7) === prev.slice(0, 7)) return "";
+      return (k++ % every === 0) ? monthLabel(d) : "";
+    });
+    return { labels: labels, skip: false };
+  }
 
   function renderContribLegend(comps) {
     var parts = comps.map(function (n) {
@@ -1541,8 +1565,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
   }
 
   function renderContrib() {
-    var data = aggContrib(sliceRange(contribView(), cstate)), comps = contribComponents();
+    var all = contribView(), data = aggContrib(all, sliceRange(all, cstate)), comps = contribComponents();
     var labels = data.map(function (r) { return r.date; });
+    var ticks = contribTicks(data);
     if (contribChart) { contribChart.destroy(); contribChart = null; }
 
     // The bars stand on the average, not on zero, so the axis is the growth
@@ -1605,10 +1630,10 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
           x: { stacked: true, grid: { display: false },
                border: { color: css("--border") },
                ticks: { color: css("--text-secondary"), maxRotation: 0, autoSkipPadding: 24,
-                        callback: function (value) {
-                          var lab = (typeof value === "number" && this.getLabelForValue)
-                            ? this.getLabelForValue(value) : value;
-                          return monthLabel(lab);
+                        autoSkip: ticks.skip,
+                        callback: function (value, index) {
+                          var i = typeof value === "number" ? value : index;
+                          return ticks.labels[i] === undefined ? "" : ticks.labels[i];
                         } } },
           y: { stacked: false, grid: { color: css("--grid"), drawTicks: false },
                border: { display: false },
@@ -2208,10 +2233,17 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     return { obs: obs, fc: fc, fcShown: shown };
   }
   // Contributions by month or quarter: the average of the weeks, so they still add up.
+  // As in aggMain(): every period is averaged over all of its weeks, and the
+  // periods the visible weeks touch are kept, so both figures show the same
+  // months or quarters for the same range.
   var cfreq = "w";
-  function aggContrib(arr) {
-    if (cfreq === "w") return arr;
-    return fullFirst(groupBy(arr, cfreq)).map(function (p) {
+  function aggContrib(all, vis) {
+    if (cfreq === "w") return vis;
+    if (!vis.length) return [];
+    var k0 = periodOf(vis[0].date, cfreq), k1 = periodOf(vis[vis.length - 1].date, cfreq);
+    return fullFirst(groupBy(all, cfreq)).filter(function (p) {
+      return p.key >= k0 && p.key <= k1;
+    }).map(function (p) {
       var n = p.rows.length, last = p.rows[n - 1];
       var r = { date: last.date, t: last.t, values: {}, total: 0, trend: 0, wai: 0, dev: 0 };
       p.rows.forEach(function (w) {
