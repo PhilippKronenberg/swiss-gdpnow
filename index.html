@@ -997,6 +997,22 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
     }
   };
 
+  // A range that starts mid-quarter would leave the quarterly line beginning
+  // in the middle of the growth chart. The last week of the quarter before
+  // (at most 13 weeks back) carries that quarter's point: it is added to the
+  // quarterly series and the axis reaches back to it, while the weekly line,
+  // and every other figure, still starts where the range starts.
+  function leadQuarterRow(data) {
+    if (!data.length) return null;
+    var i0 = rows.indexOf(data[0]);
+    var hasQ = function (r) {
+      return [r.wai_qoq_q, r.wai_yoy_q, r.gdp_qoq, r.gdp_yoy].some(function (x) { return x !== null && x !== undefined; });
+    };
+    if (i0 > 0 && hasQ(data[0])) return null;   // the range starts on a quarter's point
+    for (var j = i0 - 1; j >= 0 && j >= i0 - 13; j--) if (hasQ(rows[j])) return rows[j];
+    return null;
+  }
+
   function buildDatasets(view, data, agg) {
     var v = VIEWS[view], sets = [];
     var wai = css("--series-wai"), band = css("--series-wai-band"), gdpC = css("--series-gdp");
@@ -1031,9 +1047,12 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                   fill: false, order: 1 });
     }
 
-    if (state.waiq && v.quarterly && data.some(function (r) { return r[v.quarterly] !== null; })) {
+    // The quarterly series also take the previous quarter's point, so their line
+    // starts at the left edge; the weekly line does not (see leadQuarterRow()).
+    var qd = (!agg && leadQuarterRow(data)) ? [leadQuarterRow(data)].concat(data) : data;
+    if (state.waiq && v.quarterly && qd.some(function (r) { return r[v.quarterly] !== null; })) {
       sets.push({ label: "Weekly Nowcast, aggregated to quarterly",
-                  data: data.filter(function (r) { return r[v.quarterly] !== null; })
+                  data: qd.filter(function (r) { return r[v.quarterly] !== null; })
                             .map(function (r) { return { x: r.t, y: r[v.quarterly] }; }),
                   borderColor: css("--series-waiq"), backgroundColor: css("--series-waiq"),
                   borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
@@ -1041,9 +1060,9 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                   tension: 0, fill: false, order: 2 });
     }
 
-    if (state.gdp && v.gdp && data.some(function (r) { return r[v.gdp] !== null; })) {
+    if (state.gdp && v.gdp && qd.some(function (r) { return r[v.gdp] !== null; })) {
       sets.push({ label: "Published GDP",
-                  data: data.filter(function (r) { return r[v.gdp] !== null; })
+                  data: qd.filter(function (r) { return r[v.gdp] !== null; })
                             .map(function (r) { return { x: r.t, y: r[v.gdp] }; }),
                   showLine: false, borderColor: gdpC, backgroundColor: gdpC,
                   pointRadius: 4, pointHoverRadius: 6,
@@ -1225,7 +1244,7 @@ footer .feedback { margin-top: 8px; font-size: 0.95rem; color: var(--text-second
                                            data[data.length - 1].t - data[0].t <= 730 * 864e5 ? "month" : undefined,
                                      displayFormats: { day: "d MMM", week: "d MMM",
                                                        month: "MMM yyyy", quarter: "MMM yyyy" } },
-               min: data.length ? data[0].t - 3.5 * 864e5 : undefined,
+               min: data.length ? ((!agg && leadQuarterRow(data)) ? leadQuarterRow(data).t : data[0].t) - 3.5 * 864e5 : undefined,
                // The forecast ends on a hollow diamond, which needs room to be
                // drawn whole and hovered on a narrow screen.
                max: data.length ? ((agg ? agg.fcShown : forecastShown(data)) ? (agg ? agg.fc[agg.fc.length - 1].t : fcRows[fcRows.length - 1].t) + 21 * 864e5
